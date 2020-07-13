@@ -40,4 +40,4 @@ jobs:
       script:
         - npm prune
         - travis_retry npm i
-        - npx semantic-release
+        #- npx semantic-release

@@ -10,6 +10,7 @@ php:
   - 5.6
   - 7.2
   - 7.3
+  - 7.4
 # Trigger a push build on master, next and dependabot branches + PRs build on every branches
 # Avoid double build on PRs (See https://github.com/travis-ci/travis-ci/issues/1147)
 branches:

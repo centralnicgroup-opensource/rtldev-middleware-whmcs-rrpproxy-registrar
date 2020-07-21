@@ -38,9 +38,9 @@ class RRPProxyClient
             $params[$data->setting] = self::decrypt($data->value);
         }
         if ($params['TestMode']) {
-            $this->api_url = 'https://api-ote.rrpproxy.net/api/call?s_opmode=OTE&s_login=' . urlencode($params['Username']) . '&s_pw=' . urlencode($params['Password']);
+            $this->api_url = 'https://api-ote.rrpproxy.net/api/call?s_opmode=OTE&s_login=' . rawurlencode($params['Username']) . '&s_pw=' . rawurlencode($params['TestPassword']);
         } else {
-            $this->api_url = 'https://api.rrpproxy.net/api/call?s_login=' . urlencode($params['Username']) . '&s_pw=' . urlencode($params['Password']);
+            $this->api_url = 'https://api.rrpproxy.net/api/call?s_login=' . rawurlencode($params['Username']) . '&s_pw=' . rawurlencode($params['Password']);
         }
     }
 
@@ -109,18 +109,26 @@ class RRPProxyClient
                 $params['dnszone'] = ($dnszoneIDN ? $dnszoneIDN : $params['dnszone']);
             }
         }
-
-        $url = $this->api_url . '&command=' . $command;
+        
+        $url = $this->api_url;
+        $params['command'] = $command;
         foreach ($params as $key => $val) {
-            $url .= '&' . $key . '=' . urlencode($val);
+            $url .= '&' . rawurlencode($key) . '=' . rawurlencode($val);
         }
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-        curl_setopt($ch, CURLOPT_COOKIESESSION, true);
+        
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_TIMEOUT         => 20,
+            CURLOPT_SSL_VERIFYPEER  => true,
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_HEADER          => false,
+            CURLOPT_USERAGENT       => "WHMCS (" . PHP_OS . "; " . php_uname('m') . "; rv:rrpproxy/".RRPPROXY_VERSION.") php/" . implode(".", [PHP_MAJOR_VERSION, PHP_MINOR_VERSION, PHP_RELEASE_VERSION]),
+            CURLOPT_REFERER         => $GLOBALS["CONFIG"]["SystemURL"],
+            CURLOPT_HTTPHEADER      =>  [
+                'Expect:',
+                'Content-type: text/html; charset=UTF-8',
+            ]
+        ]);
         $response = curl_exec($ch);
 
         if (curl_errno($ch)) {

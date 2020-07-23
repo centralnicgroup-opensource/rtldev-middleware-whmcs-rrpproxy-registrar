@@ -1,5 +1,5 @@
 <?php
-$params["additionalfields"]["ID Form Type"] = explode("|", $params["additionalfields"]["ID Form Type"]);
+$params["additionalfields"]["ID Form Type"] = $params["additionalfields"]["ID Form Type"];
 $idType = $params["additionalfields"]["ID Form Type"][0];
 switch ($idType) {
     case "DNI":
@@ -16,7 +16,7 @@ switch ($idType) {
         $idType = 0;
 }
 if (!empty($params["additionalfields"]["Legal Form"])) {
-    $params["additionalfields"]["Legal Form"] = explode("|", $params["additionalfields"]["Legal Form"]);
+    $params["additionalfields"]["Legal Form"] = $params["additionalfields"]["Legal Form"];
     $legalForm = $params["additionalfields"]["Legal Form"][0];
     if (!is_int($legalForm)) {
         switch ($legalForm) {

@@ -17,6 +17,7 @@
  *
  *
  */
+
 namespace WHMCS\Module\Registrar\RRPProxy;
 
 use WHMCS\Database\Capsule;
@@ -29,8 +30,9 @@ class RRPProxyClient
     public function __construct()
     {
         $registrar = Capsule::table('tblregistrars')->where('registrar', 'rrpproxy')->get();
-        if (empty($registrar))
+        if (empty($registrar)) {
             throw \Exception('Registrar data not found');
+        }
         $params = [];
         foreach ($registrar as $data) {
             $params[$data->setting] = self::decrypt($data->value);
@@ -40,6 +42,55 @@ class RRPProxyClient
         } else {
             $this->api_url = 'https://api.rrpproxy.net/api/call?s_login=' . urlencode($params['Username']) . '&s_pw=' . urlencode($params['Password']);
         }
+    }
+
+    public static function decrypt($encrypted_string)
+    {
+        $command = 'DecryptPassword';
+        $postData = array(
+            'password2' => $encrypted_string,
+        );
+        $results = localAPI($command, $postData);
+        return html_entity_decode($results['password']);
+    }
+
+    /**
+     * Encrypt $decrypted_string
+     *
+     * @param string $decrypted_string The decrypted string
+     * @return string $encrypted_string
+     * */
+    public static function encrypt($decrypted_string)
+    {
+        $command = 'EncryptPassword';
+        $postData = array(
+            'password2' => $decrypted_string,
+        );
+        $results = localAPI($command, $postData);
+
+        return $results['password'];
+    }
+
+    public function getContactInfo($contact)
+    {
+        try {
+            $response = $this->call('StatusContact', ['contact' => $contact]);
+            $values["First Name"] = $response["property"]["firstname"][0];
+            $values["Last Name"] = $response["property"]["lastname"][0];
+            $values["Company Name"] = $response["property"]["organization"][0];
+            $values["Address"] = $response["property"]["street"][0];
+            $values["Address 2"] = $response["property"]["street"][1];
+            $values["City"] = $response["property"]["city"][0];
+            $values["State"] = $response["property"]["state"][0];
+            $values["Postcode"] = $response["property"]["zip"][0];
+            $values["Country"] = $response["property"]["country"][0];
+            $values["Phone"] = $response["property"]["phone"][0];
+            $values["Fax"] = $response["property"]["fax"][0];
+            $values["Email"] = $response["property"]["email"][0];
+        } catch (\Exception $ex) {
+            return [];
+        }
+        return $values;
     }
 
     public function call($command, $params = array())
@@ -69,7 +120,7 @@ class RRPProxyClient
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-        curl_setopt($ch, CURLOPT_COOKIESESSION, TRUE);
+        curl_setopt($ch, CURLOPT_COOKIESESSION, true);
         $response = curl_exec($ch);
 
         if (curl_errno($ch)) {
@@ -94,7 +145,7 @@ class RRPProxyClient
         }
     }
 
-    function processResponse($response)
+    private function processResponse($response)
     {
         if (is_array($response)) {
             return $response;
@@ -127,54 +178,5 @@ class RRPProxyClient
             unset($hash['property']);
         }
         return $hash;
-    }
-
-    function GetContactInfo($contact)
-    {
-        try {
-            $response = $this->call('StatusContact', ['contact' => $contact]);
-            $values["First Name"] = $response["property"]["firstname"][0];
-            $values["Last Name"] = $response["property"]["lastname"][0];
-            $values["Company Name"] = $response["property"]["organization"][0];
-            $values["Address"] = $response["property"]["street"][0];
-            $values["Address 2"] = $response["property"]["street"][1];
-            $values["City"] = $response["property"]["city"][0];
-            $values["State"] = $response["property"]["state"][0];
-            $values["Postcode"] = $response["property"]["zip"][0];
-            $values["Country"] = $response["property"]["country"][0];
-            $values["Phone"] = $response["property"]["phone"][0];
-            $values["Fax"] = $response["property"]["fax"][0];
-            $values["Email"] = $response["property"]["email"][0];
-        } catch (Exception $ex) {
-
-        }
-        return $values;
-    }
-
-    public static function decrypt($encrypted_string)
-    {
-        $command = 'DecryptPassword';
-        $postData = array(
-            'password2' => $encrypted_string,
-        );
-        $results = localAPI($command, $postData);
-        return html_entity_decode($results['password']);
-    }
-
-    /**
-     * Encrypt $decrypted_string
-     *
-     * @param  string $decrypted_string The decrypted string
-     * @return string $encrypted_string
-     * */
-    public static function encrypt($decrypted_string)
-    {
-        $command = 'EncryptPassword';
-        $postData = array(
-            'password2' => $decrypted_string,
-        );
-        $results = localAPI($command, $postData);
-
-        return $results['password'];
     }
 }

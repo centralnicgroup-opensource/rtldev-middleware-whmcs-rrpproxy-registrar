@@ -20,6 +20,7 @@
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
+
 use WHMCS\Carbon;
 use WHMCS\Domain\Registrar\Domain;
 use WHMCS\Domains\DomainLookup\ResultsList;
@@ -91,7 +92,9 @@ function rrpproxy_GetDomainInformation(array $params)
                 $domain->setDomainContactChangePending(true);
             }
         } catch (Exception $ex) {
-            
+            return array(
+                'error' => $ex->getMessage(),
+            );
         }
 
         if (isset($result['property']['x-time-to-suspension'][0])) {
@@ -122,7 +125,7 @@ function rrpproxy_ResendIRTPVerificationEmail(array $params)
     $domain = rrpproxy_GetDomainInformation($params);
     try {
         $api = new RRPProxyClient();
-        $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string) $domain->getRegistrantEmailAddress()]);
+        $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string)$domain->getRegistrantEmailAddress()]);
         return array(
             'success' => true,
         );
@@ -182,8 +185,8 @@ function rrpproxy_RegisterDomain($params)
     }
 
     // domain addon purchase status
-    $enableIdProtection = (bool) $params['idprotection'];
- 
+    $enableIdProtection = (bool)$params['idprotection'];
+
     // Loading custom RRPProxy TLD Extensions
     $extensions = [];
     $extensions_path = implode(DIRECTORY_SEPARATOR, array(__DIR__, "tlds", $params["domainObj"]->getLastTLDSegment() . ".php"));
@@ -216,7 +219,7 @@ function rrpproxy_RegisterDomain($params)
         return array(
             'success' => true,
         );
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return array(
             'error' => $e->getMessage(),
         );
@@ -247,7 +250,7 @@ function rrpproxy_TransferDomain($params)
         return array(
             'success' => true,
         );
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return array(
             'error' => $e->getMessage(),
         );
@@ -377,7 +380,7 @@ function rrpproxy_GetContactDetails($params)
     try {
         $api = new RRPProxyClient();
         $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
-        $contacts['Registrant'] = $api->GetContactInfo($response["property"]["ownercontact"][0]);
+        $contacts['Registrant'] = $api->getContactInfo($response["property"]["ownercontact"][0]);
 
         return $contacts;
     } catch (Exception $ex) {
@@ -446,7 +449,7 @@ function rrpproxy_SaveContactDetails($params)
  * registration or transfer.
  *
  * @param array $params common module parameters
- * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+ * @return ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
  * @throws Exception Upon domain availability check failure.
  *
  * @see \WHMCS\Domains\DomainLookup\ResultsList
@@ -486,7 +489,7 @@ function rrpproxy_CheckAvailability($params)
             $results->append($searchResult);
         }
         return $results;
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return array(
             'error' => $e->getMessage(),
         );
@@ -499,7 +502,7 @@ function rrpproxy_CheckAvailability($params)
  * Provide domain suggestions based on the domain lookup term provided.
  *
  * @param array $params common module parameters
- * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+ * @return ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
  * @throws Exception Upon domain suggestions check failure.
  *
  * @see \WHMCS\Domains\DomainLookup\ResultsList
@@ -524,7 +527,7 @@ function rrpproxy_GetDomainSuggestions($params)
             }
         }
         return $results;
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return array(
             'error' => $e->getMessage(),
         );
@@ -636,7 +639,7 @@ function rrpproxy_SaveDNS($params)
             $content = str_replace($response['property']['prio'][$key] . ' ', '', $response['property']['content'][$key]);
             $records[$key] = ['hostname' => $response['property']['name'][$key], 'type' => $type, 'address' => $content, 'priority' => $response['property']['prio'][$key], 'recid' => $key];
         }
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return array(
             'error' => $e->getMessage(),
         );
@@ -669,7 +672,7 @@ function rrpproxy_SaveDNS($params)
         return array(
             'success' => 'success',
         );
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return array(
             'error' => $e->getMessage(),
         );
@@ -740,7 +743,7 @@ function rrpproxy_GetEPPCode($params)
  *
  * This feature currently works for .DE, .UK domains and .AT domains.
  *
- * TARGET	Where to push the domain
+ * TARGET    Where to push the domain
  * .DE target: TRANSIT (push domain back to registry)
  * .AT target: REGISTRY (push domain back to registry)
  * .UK target: EXAMPLE-TAG-HOLDER (new IPS TAG) DETAGGED (push domain back to registry)
@@ -979,7 +982,7 @@ function rrpproxy_dnssec($params)
             }
         }
         $keydata_rrp = $filter;
-    } catch (\Exception $ex) {
+    } catch (Exception $ex) {
         $error = $ex->getMessage();
     }
 
@@ -1016,7 +1019,7 @@ function rrpproxy_dnssec($params)
  */
 function rrpproxy_ClientAreaCustomButtonArray()
 {
-    
+    return null;
 }
 
 /**
@@ -1048,5 +1051,5 @@ function rrpproxy_ClientAreaAllowedFunctions()
  */
 function rrpproxy_ClientArea($params)
 {
-    
+    return null;
 }

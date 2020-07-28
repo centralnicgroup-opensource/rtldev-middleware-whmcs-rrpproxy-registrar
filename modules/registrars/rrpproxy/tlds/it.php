@@ -48,7 +48,7 @@ switch ($params["additionalfields"]["Legal Type"]) {
     case "public organizations":
         $legaltype = "5";
         break;
-        case "other subjects":
+    case "other subjects":
         $legaltype = "6";
         break;
     case "non natural foreigners":

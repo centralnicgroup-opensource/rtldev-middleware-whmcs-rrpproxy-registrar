@@ -688,6 +688,110 @@ function rrpproxy_SaveDNS($params)
 }
 
 /**
+ * Get Email Forwardings
+ *
+ * @param array $params common module parameters
+ * @return array
+ * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+ */
+function rrpproxy_GetEmailForwarding($params)
+{
+    $api = new RRPProxyClient();
+    try {
+        $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
+    } catch (Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+
+    $values = [];
+    for ($i = 0; $i < $response['property']['total'][0]; $i++) {
+        $from = explode("@", $response['property']['from'][$i]);
+        $values[$i] = ['prefix' => $from[0], 'forwardto' => $response['property']['to'][$i]];
+    }
+    return $values;
+}
+
+/**
+ * Save Email Forwarding
+ *
+ * @param array $params common module parameters
+ * @return array
+ * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+ */
+function rrpproxy_SaveEmailForwarding($params)
+{
+    $api = new RRPProxyClient();
+    try {
+        $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
+    } catch (Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+
+    $orig = [];
+    $add = [];
+    $del = [];
+
+    for ($i = 0; $i < $response['property']['total'][0]; $i++) {
+        $orig[$response['property']['from'][$i]] = $response['property']['to'][$i];
+    }
+
+    foreach ($params["prefix"] as $key => $value) {
+        $from = $value . "@" . $params['domainname'];
+        $to = $params["forwardto"][$key];
+        if (!$value || !$to) {
+            // invalid
+            continue;
+        }
+        if (isset($orig[$from])) {
+            // already present
+            if ($orig[$from] == $to) {
+                // no change needed
+                continue;
+            } else {
+                // differs, needs to be deleted and readded
+                $del[$from] = $orig[$from];
+                $add[$from] = $to;
+            }
+        } else {
+            // not present, needs to be added
+            $add[$from] = $to;
+        }
+    }
+
+    foreach ($orig as $from => $to) {
+        $explode = explode("@", $from);
+        if (!in_array($explode[0], $params["prefix"])) {
+            // not present locally anymore, needs to be deleted
+            $del[$from] = $to;
+        }
+    }
+
+    $values = [];
+
+    foreach ($del as $from => $to) {
+        try {
+            $api->call('DeleteMailFwd', ['from' => $from, 'to' => $to]);
+        } catch (Exception $e) {
+            $values['error'] .= $e->getMessage() . " ";
+        }
+    }
+
+    foreach ($add as $from => $to) {
+        try {
+            $api->call('AddMailFwd', ['from' => $from, 'to' => $to]);
+        } catch (Exception $e) {
+            $values['error'] .= $e->getMessage() . " ";
+        }
+    }
+
+    return $values;
+}
+
+/**
  * Enable/Disable ID Protection.
  *
  * @param array $params common module parameters

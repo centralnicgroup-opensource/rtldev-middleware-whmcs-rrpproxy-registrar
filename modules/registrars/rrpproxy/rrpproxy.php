@@ -27,6 +27,8 @@ use WHMCS\Domains\DomainLookup\ResultsList;
 use WHMCS\Domains\DomainLookup\SearchResult;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
+define(RRPPROXY_VERSION, "0.1.0");
+
 require_once __DIR__ . '/lib/RRPProxyClient.php';
 
 function rrpproxy_MetaData()
@@ -42,7 +44,7 @@ function rrpproxy_getConfigArray()
     return array(
         'FriendlyName' => array(
             'Type' => 'System',
-            'Value' => 'RRPProxy Registrar',
+            'Value' => 'RRPProxy',
         ),
         'Username' => array(
             'Type' => 'text',
@@ -56,9 +58,15 @@ function rrpproxy_getConfigArray()
             'Default' => '',
             'Description' => 'Enter your RRPProxy Password',
         ),
+        'TestPassword' => array(
+            'Type' => 'password',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'Enter your RRPProxy OT&amp;E Password',
+        ),
         'TestMode' => array(
             'Type' => 'yesno',
-            'Description' => 'Tick to enable OTE',
+            'Description' => 'Tick to enable OT&amp;E',
         )
     );
 }

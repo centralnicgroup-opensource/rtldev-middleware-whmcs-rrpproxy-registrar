@@ -1,4 +1,5 @@
 <?php
+
 switch ($params["additionalfields"]["Legal Type"]) {
     case "UK Limited Company":
         $legaltype = "LTD";

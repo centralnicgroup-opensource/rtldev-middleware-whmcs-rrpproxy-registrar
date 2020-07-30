@@ -1,4 +1,5 @@
 <?php
+
 $extensions['X-ACCEPT-NSCHANGE'] = 0;
 if ($params["additionalfields"]['Registrant Type'] == 'ind') {
     $extensions['X-HK-DOMAIN-CATEGORY'] = 'I';

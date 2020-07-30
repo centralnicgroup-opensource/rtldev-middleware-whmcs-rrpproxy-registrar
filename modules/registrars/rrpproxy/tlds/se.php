@@ -1,4 +1,5 @@
 <?php
+
 $tlds = ['se', 'com.se', 'tm.se'];
 
 if (in_array($params['tld'], $tlds)) {

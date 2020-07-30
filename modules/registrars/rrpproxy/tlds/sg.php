@@ -1,4 +1,5 @@
 <?php
+
 $extensions['X-SG-ACCEPT-TRUSTEE-TAC'] = 0;
 
 switch ($params["additionalfields"]["Registrant Type"]) {

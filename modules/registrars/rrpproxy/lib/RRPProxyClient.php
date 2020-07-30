@@ -1,4 +1,5 @@
 <?php
+
 /**
  * WHMCS RRPProxy API Client
  *
@@ -122,7 +123,7 @@ class RRPProxyClient
             CURLOPT_SSL_VERIFYPEER  => true,
             CURLOPT_RETURNTRANSFER  => true,
             CURLOPT_HEADER          => false,
-            CURLOPT_USERAGENT       => "WHMCS (" . PHP_OS . "; " . php_uname('m') . "; rv:rrpproxy/".RRPPROXY_VERSION.") php/" . implode(".", [PHP_MAJOR_VERSION, PHP_MINOR_VERSION, PHP_RELEASE_VERSION]),
+            CURLOPT_USERAGENT       => "WHMCS (" . PHP_OS . "; " . php_uname('m') . "; rv:rrpproxy/" . RRPPROXY_VERSION . ") php/" . implode(".", [PHP_MAJOR_VERSION, PHP_MINOR_VERSION, PHP_RELEASE_VERSION]),
             CURLOPT_REFERER         => $GLOBALS["CONFIG"]["SystemURL"],
             CURLOPT_HTTPHEADER      =>  [
                 'Expect:',

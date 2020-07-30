@@ -1,4 +1,5 @@
 <?php
+
 $params["additionalfields"]["ID Form Type"] = $params["additionalfields"]["ID Form Type"];
 $idType = $params["additionalfields"]["ID Form Type"][0];
 switch ($idType) {

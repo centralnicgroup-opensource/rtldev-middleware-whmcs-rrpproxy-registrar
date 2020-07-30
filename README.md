@@ -22,6 +22,7 @@ This Repository covers the updated WHMCS Registrar Module of RRPproxy. Source co
 * Domain Renewal
 * IDNs Support (using idn_to_ascii)
 * DNS Management (A, AAAA, MX, CNAME, TXT)
+* Web Forwarding
 * Email forwarding
 * Support for OTE testing environment
 * Support for WHOIS Privacy / ID Protection

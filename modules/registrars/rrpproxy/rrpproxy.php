@@ -64,6 +64,13 @@ function rrpproxy_getConfigArray()
             'Default' => '',
             'Description' => 'Enter your RRPProxy Password',
         ],
+        'DefaultTTL' => [
+            'FriendlyName' => 'Default TTL',
+            'Type' => 'text',
+            'Size' => '10',
+            'Default' => '28800',
+            'Description' => 'Default TTL value in seconds for DNS records'
+        ],
         'DNSSEC' => [
             'FriendlyName' => 'Allow DNSSEC',
             'Type' => 'yesno',
@@ -634,21 +641,61 @@ function rrpproxy_SaveRegistrarLock($params)
  */
 function rrpproxy_GetDNS($params)
 {
-    /* Need to add a check if the DNZ Zone Exists */
+    $values = [];
+
+    $api = new RRPProxyClient();
 
     try {
-        $api = new RRPProxyClient();
-        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'wide' => 1]);
-
-        foreach ($response['property']['type'] as $key => $type) {
-            $content = str_replace($response['property']['prio'][$key] . ' ', '', $response['property']['content'][$key]);
-            $records[$key] = ['hostname' => $response['property']['name'][$key], 'type' => $type, 'address' => $content, 'priority' => $response['property']['prio'][$key], 'recid' => $key];
-        }
-        return $records;
+        $response = $api->call('CheckDNSZone', ['dnszone' => $params['domainname']]);
+        $zoneExists = ($response['code'] != 210);
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
+    }
+
+    if (!$zoneExists) {
+        try {
+            $api->call('AddDNSZone', ['dnszone' => $params['domainname']]);
+            $fields = [
+                'domain' => $params['domainname'],
+                'nameserver0' => "ns1.dnsres.net",
+                'nameserver1' => "ns2.dnsres.net",
+                'nameserver2' => "ns3.dnsres.net",
+                'nameserver3' => "",
+                'nameserver4' => ""
+            ];
+            $api->call('ModifyDomain', $fields);
+        } catch (Exception $ex) {
+            return ['error' => $ex->getMessage()];
+        }
+    }
+
+    try {
+        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'wide' => 1]);
+        $webForwards = [];
+        for ($i = 0; $i < $response['property']['count'][0]; $i++) {
+            $name = $response['property']['name'][$i];
+            $type = $response['property']['type'][$i];
+            $content = $response['property']['content'][$i];
+            $priority = $response['property']['prio'][$i];
+            $source = ($name == "@") ? $params['domainname'] : $name . "." . $params['domainname'];
+
+            if ($response['property']['locked'][$i] == 1) {
+                $forward = $api->call('QueryWebFwdList', ['source' => $source, 'wide' => 1]);
+                if ($forward['property']['total'][0] > 0 && !in_array($name, $webForwards)) {
+                    $webForwards[] = $name;
+                    $values[] = ['hostname' => $name, 'type' => $forward['property']['type'][0] == "rd" ? "URL" : "FRAME", 'address' => $forward['property']['target'][0]];
+                }
+                continue;
+            }
+            if ($type == 'MX' &&  $content == $priority) {
+                continue;
+            }
+
+            $values[] = ['hostname' => $name, 'type' => $type, 'address' => $content, 'priority' => $priority];
+        }
+        return $values;
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -663,57 +710,86 @@ function rrpproxy_GetDNS($params)
  */
 function rrpproxy_SaveDNS($params)
 {
-    $fields = array(
-        'dnszone' => $params['domainname']
-    );
-
+    $values = [];
+    $oldZone = [];
     $api = new RRPProxyClient();
 
     try {
-        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'wide' => 1]);
+        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'orderby' => "type", 'wide' => 1]);
 
-        foreach ($response['property']['type'] as $key => $type) {
-            $content = str_replace($response['property']['prio'][$key] . ' ', '', $response['property']['content'][$key]);
-            $records[$key] = ['hostname' => $response['property']['name'][$key], 'type' => $type, 'address' => $content, 'priority' => $response['property']['prio'][$key], 'recid' => $key];
-        }
-    } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-    //Delete All Records
-    foreach ($records as $key => $value) {
-        if ($value == 'MX') {
-            $priority = ' ' . $value['priority'] . ' ';
-        } else {
-            $priority = ' ';
-        }
-        $fields['DELRR' . $key] = $value['hostname'] . " " . $value['type'] . $priority . $value['address'];
-    }
+        for ($i = 0; $i < $response['property']['count'][0]; $i++) {
+            $name = $response['property']['name'][$i];
+            $type = $response['property']['type'][$i];
+            $content = $response['property']['content'][$i];
+            $priority = $response['property']['prio'][$i];
+            $source = ($name == "@") ? $params['domainname'] : $name . "." . $params['domainname'];
 
-    //Add Records
-    foreach ($params['dnsrecords'] as $key => $value) {
-        if ($value == 'MX') {
-            $priority = ' ' . $value['priority'] . ' ';
-        } else {
-            $priority = ' ';
-        }
-        if (isset($value['hostname']) && $value['hostname'] != '' && isset($value['type']) && $value['type'] != '' && isset($value['address']) && $value['address'] != '') {
-            $fields['ADDRR' . $key] = $value['hostname'] . " " . $value['type'] . $priority . $value['address'];
-        }
-    }
+            if ($response['property']['locked'][$i] == 1) {
+                $forward = $api->call('QueryWebFwdList', ['source' => $source, 'wide' => 1]);
+                if ($forward['property']['total'][0] > 0) {
+                    $api->call('DeleteWebFwd', ['source' => $source]);
+                }
+                continue;
+            }
 
-    try {
+            if ($type == 'MX' && $content == $priority) {
+                continue;
+            }
+
+            $values = [$name, $response['property']['ttl'][$i], 'IN', $type, $content, $priority];
+            if ($priority) {
+                unset($values[5]);
+            }
+            if ($type == 'NS') {
+                unset($values[2]);
+            }
+            $oldZone[] = implode(' ', $values);
+        }
+
+        $zone = [];
+        $ttl = is_numeric($params['DefaultTTL']) ? $params['DefaultTTL'] : 28800;
+        foreach ($params['dnsrecords'] as $record) {
+            if (!$record['address']) {
+                continue;
+            }
+            if (!$record['hostname'] || $record['hostname'] == $params['domainname']) {
+                $record['hostname'] = "@";
+            }
+
+            switch ($record['type']) {
+                case "URL":
+                case "FRAME":
+                    $source = $record['hostname'] == "@" ? $params['domainname'] : $record['hostname'] . '.' . $params['domainname'];
+                    $type = ($record['type'] == "URL") ? "RD" : "MRD";
+                    $api->call('AddWebFwd', ['source' => $source, 'target' => $record['address'], 'type' => $type]);
+                    break;
+                case "MX":
+                case "SRV":
+                    $zone[] = sprintf("%s %s IN %s %s %s", $record['hostname'], $ttl, $record['type'], $record['priority'], $record['address']);
+                    break;
+                case "NS":
+                    $zone[] = sprintf("%s %s %s %s", $record['hostname'], $ttl, $record['type'], $record['address']);
+                    break;
+                default:
+                    $zone[] = sprintf("%s %s IN %s %s", $record['hostname'], $ttl, $record['type'], $record['address']);
+            }
+        }
+
+        $fields = ['dnszone' => $params['domainname']];
+        $i = 0;
+        foreach ($oldZone as $record) {
+            $fields['DELRR' . $i++] = $record;
+        }
+        $i = 0;
+        foreach ($zone as $record) {
+            $fields['ADDRR' . $i++] = $record;
+        }
         $api->call('ModifyDNSZone', $fields);
-
-        return array(
-            'success' => 'success',
-        );
-    } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
+
+    return $values;
 }
 
 /**

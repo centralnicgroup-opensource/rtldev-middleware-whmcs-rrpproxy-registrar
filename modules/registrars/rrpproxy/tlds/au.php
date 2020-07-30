@@ -1,4 +1,5 @@
 <?php
+
 $extensions['X-AU-DOMAIN-IDNUMBER'] = $params["additionalfields"]['Registrant ID'];
 $extensions['X-AU-DOMAIN-RELATIONTYPE'] = $params["additionalfields"]['Eligibility Type'];
 $extensions['X-AU-OWNER-ORGANIZATION'] = $params["additionalfields"]['Registrant Name'];

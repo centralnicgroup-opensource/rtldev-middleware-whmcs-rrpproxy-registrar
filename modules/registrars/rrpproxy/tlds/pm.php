@@ -1,4 +1,5 @@
 <?php
+
 $extensions['X-FR-ACCEPT-TRUSTEE-TAC'] = 0;
 
 switch ($params["additionalfields"]["Legal Type"]) {

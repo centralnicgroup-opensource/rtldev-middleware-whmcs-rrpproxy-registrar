@@ -1,4 +1,5 @@
 <?php
+
 /**
  * WHMCS RRPProxy Registrar Module
  *
@@ -17,6 +18,7 @@
  *
  *
  */
+
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
@@ -58,6 +60,11 @@ function rrpproxy_getConfigArray()
             'Default' => '',
             'Description' => 'Enter your RRPProxy Password',
         ),
+        'DNSSEC' => [
+            'FriendlyName' => 'Allow DNSSEC',
+            'Type' => 'yesno',
+            'Description' => 'Enables DNSSEC configuration in the client area'
+        ],
         'TestPassword' => array(
             'Type' => 'password',
             'Size' => '25',
@@ -1054,68 +1061,75 @@ function rrpproxy_TransferSync($params)
  */
 function rrpproxy_dnssec($params)
 {
-    $fields = array(
-        'domain' => $params['domainname']
-    );
-
     $api = new RRPProxyClient();
-
-    if (isset($_POST["submit"])) {
-        if (isset($_POST["DNSSEC"])) {
-            foreach ($_POST["DNSSEC"] as $key => $dnssecrecord) {
-                $empty = true;
-                foreach ($dnssecrecord as $attribute) {
-                    if (!empty($attribute)) {
-                        $empty = false;
-                    }
-                }
-                if (!$empty) {
-                    $fields["dnssec" . $key] = implode(" ", $dnssecrecord);
-                }
-            }
-        }
-
-        try {
-            $api->call('ModifyDomain', $fields);
-        } catch (Exception $ex) {
-            $error = $ex->getMessage();
-        }
-    }
+    $error = null;
 
     try {
-        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
-        $dsdata_rrp = (isset($response["property"]["dnssecdsdata"])) ? $response["property"]["dnssecdsdata"] : [];
-        $keydata_rrp = (isset($response["property"]["dnssec"])) ? $response["property"]["dnssec"] : [];
-
-        $filter = array();
-        foreach ($keydata_rrp as $k) {
-            if (!empty($k)) {
-                $filter[] = $k;
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["DNSSEC"])) {
+            $fields = [];
+            $i = 0;
+            foreach ($_POST["DNSSEC"] as $key => $record) {
+                $record = array_map('trim', $record);
+                if (!in_array('', $record)) {
+                    $fields["dnssec" . $i++] = implode(" ", $record);
+                }
             }
+            if (!$fields) {
+                $fields['DNSSECDELALL'] = 1;
+            }
+            $fields['domain'] = $params['domainname'];
+            $api->call('ModifyDomain', $fields);
         }
-        $keydata_rrp = $filter;
+
+        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        $dsdata_rrp = (isset($response['property']['dnssecdsdata'])) ? $response['property']['dnssecdsdata'] : [];
+        $keydata_rrp = (isset($response['property']['dnssec'])) ? $response['property']['dnssec'] : [];
+
+        $dsData = [];
+        foreach ($dsdata_rrp as $ds) {
+            list($keytag, $alg, $digesttype, $digest) = preg_split('/\s+/', $ds);
+            array_push($dsData, ["keytag" => $keytag, "alg" => $alg, "digesttype" => $digesttype, "digest" => $digest]);
+        }
+        $keyData = [];
+        foreach ($keydata_rrp as $key) {
+            list($flags, $protocol, $alg, $pubkey) = preg_split('/\s+/', $key);
+            array_push($keyData, ["flags" => $flags, "protocol" => $protocol, "alg" => $alg, "pubkey" => $pubkey]);
+        }
     } catch (Exception $ex) {
         $error = $ex->getMessage();
-    }
-
-    $dsdata = [];
-    foreach ($dsdata_rrp as $ds) {
-        list($keytag, $alg, $digesttype, $digest) = preg_split('/\s+/', $ds);
-        array_push($dsdata, ["keytag" => $keytag, "alg" => $alg, "digesttype" => $digesttype, "digest" => $digest]);
-    }
-    $keydata = [];
-    foreach ($keydata_rrp as $key) {
-        list($flags, $protocol, $alg, $pubkey) = preg_split('/\s+/', $key);
-        array_push($keydata, ["flags" => $flags, "protocol" => $protocol, "alg" => $alg, "pubkey" => $pubkey]);
     }
 
     return [
         'templatefile' => "dnssec",
         'vars' => [
-            'error' => $error,
-            'successful' => $successful,
-            'dsdata' => $dsdata,
-            'ksdata' => $keydata
+            'flagOptions' => [
+                256 => 'Zone Signing Key',
+                257 => 'Key Signing Key'
+            ],
+            'algOptions' => [
+                3 => 'DSA/SHA-1',
+                4 => 'Elliptic Curve',
+                5 => 'RSA/SHA-1',
+                6 => 'DSA-NSEC3-SHA1',
+                7 => 'RSASHA1-NSEC3-SHA1',
+                8 => 'RSA/SHA256',
+                10 => 'RSA/SHA512',
+                12 => 'GOST R 34.10-2001',
+                13 => 'ECDSA/SHA-256',
+                14 => 'ECDSA/SHA-384',
+                15 => 'Ed25519',
+                16 => 'Ed448'
+            ],
+            'digestOptions' => [
+                1 => 'SHA-1',
+                2 => 'SHA-256',
+                3 => 'GOST R 34.11-94',
+                4 => 'SHA-384'
+            ],
+            'dsdata' => $dsData,
+            'ksdata' => $keyData,
+            'successful' => ($_SERVER['REQUEST_METHOD'] === 'POST' && $error == null),
+            'error' => $error
         ]
     ];
 }
@@ -1129,7 +1143,7 @@ function rrpproxy_dnssec($params)
  *
  * @return array
  */
-function rrpproxy_ClientAreaCustomButtonArray()
+function rrpproxy_ClientAreaCustomButtonArray($params)
 {
     return null;
 }
@@ -1142,10 +1156,12 @@ function rrpproxy_ClientAreaCustomButtonArray()
  *
  * @return array
  */
-function rrpproxy_ClientAreaAllowedFunctions()
+function rrpproxy_ClientAreaAllowedFunctions($params)
 {
     $functions = [];
-    $functions["DNSSEC Management"] = "dnssec";
+    if ($params['DNSSEC']) {
+        $functions['DNSSEC Management'] = 'dnssec';
+    }
     return $functions;
 }
 

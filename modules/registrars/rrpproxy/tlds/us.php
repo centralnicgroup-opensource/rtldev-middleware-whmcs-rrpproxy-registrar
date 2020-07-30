@@ -1,4 +1,5 @@
 <?php
+
 switch ($params["additionalfields"]["Application Purpose"]) {
     case "Business use for profit":
         $purpose = "P1";

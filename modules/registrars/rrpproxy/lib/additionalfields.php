@@ -1,4 +1,5 @@
 <?php
+
 //.br
 $additionaldomainfields['.com.br'][] = array(
     'Name' => 'X-BR-REGISTER-NUMBER',

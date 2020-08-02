@@ -43,39 +43,43 @@ function rrpproxy_MetaData()
 
 function rrpproxy_getConfigArray()
 {
-    return array(
-        'FriendlyName' => array(
+    return [
+        'FriendlyName' => [
             'Type' => 'System',
             'Value' => 'RRPProxy',
-        ),
-        'Username' => array(
+        ],
+        'Description' => [
+            'Type' => 'System',
+            'Value' => "Don't have a RRPproxy Account yet?" . " Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>",
+        ],
+        'Username' => [
             'Type' => 'text',
             'Size' => '25',
             'Default' => '1024',
             'Description' => 'Enter your RRPProxy Username',
-        ),
-        'Password' => array(
+        ],
+        'Password' => [
             'Type' => 'password',
             'Size' => '25',
             'Default' => '',
             'Description' => 'Enter your RRPProxy Password',
-        ),
+        ],
         'DNSSEC' => [
             'FriendlyName' => 'Allow DNSSEC',
             'Type' => 'yesno',
             'Description' => 'Enables DNSSEC configuration in the client area'
         ],
-        'TestPassword' => array(
+        'TestMode' => [
+            'Type' => 'yesno',
+            'Description' => 'Tick to enable OT&amp;E',
+        ],
+        'TestPassword' => [
             'Type' => 'password',
             'Size' => '25',
             'Default' => '',
             'Description' => 'Enter your RRPProxy OT&amp;E Password',
-        ),
-        'TestMode' => array(
-            'Type' => 'yesno',
-            'Description' => 'Tick to enable OT&amp;E',
-        )
-    );
+        ]
+    ];
 }
 
 function rrpproxy_GetDomainInformation(array $params)
@@ -171,46 +175,69 @@ function rrpproxy_RegisterDomain($params)
 {
     $params = injectDomainObjectIfNecessary($params);
 
+    if ($params['tld'] == 'it' && $params['additionalfields']['Legal Type'] == 'Italian and foreign natural persons') {
+        $params['companyname'] = '';
+    }
+
     // Owner Contact Information
-    $owner = [
+    $ownerContact = [
         'firstname' => $params["firstname"],
         'lastname' => $params["lastname"],
-        'organization' => $params["companyname"],
         'email' => $params["email"],
         'street0' => $params["address1"],
         'street1' => $params["address2"],
         'city' => $params["city"],
         'state' => $params["state"],
         'zip' => $params["postcode"],
-        'country' => $params["countrycode"],
-        'phone' => $params["fullphonenumber"], // Format: +CC.xxxxxxxxxxxx
-        'new' => '1', //Create a new contact handle even if the same handle already exists.
-        'preverify' => '1' //generates the email with triggercode if the email has not been already verified or if there is an unverified job pending.
+        'country' => $params["country"],
+        'phone' => $params["fullphonenumber"],
+        'new' => 0,
+        'preverify' => 1,
+        'autodelete' => 1
     ];
-
-    // Create Owner Contact
-    try {
-        $api = new RRPProxyClient();
-        $contact = $api->call('AddContact', $owner);
-        $contact_id = $contact['property']['contact']['0'];
-    } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+    if ($params['companyname']) {
+        $ownerContact['organization'] = $params['companyname'];
     }
 
-    // domain addon purchase status
-    $enableIdProtection = (bool)$params['idprotection'];
+    // Admin Contact Information
+    $adminContact = [
+        'firstname' => $params["adminfirstname"],
+        'lastname' => $params["adminlastname"],
+        'email' => $params["adminemail"],
+        'street0' => $params["adminaddress1"],
+        'street1' => $params["adminaddress2"],
+        'city' => $params["admincity"],
+        'state' => $params["adminstate"],
+        'zip' => $params["adminpostcode"],
+        'country' => $params["admincountry"],
+        'phone' => $params["adminfullphonenumber"],
+        'new' => 0,
+        'preverify' => 1
+    ];
+    if ($params['admincompanyname']) {
+        $adminContact['organization'] = $params['admincompanyname'];
+    }
+
+    // Create contacts if not existing and get contact handle
+    try {
+        $api = new RRPProxyClient();
+        $contact = $api->call('AddContact', $ownerContact);
+        $contact_id = $contact['property']['contact']['0'];
+        $contact = $api->call('AddContact', $adminContact);
+        $admin_contact_id = $contact['property']['contact']['0'];
+    } catch (Exception $e) {
+        return ['error' => $e->getMessage()];
+    }
 
     // Loading custom RRPProxy TLD Extensions
     $extensions = [];
+    $domainApplication = false;
     $extensions_path = implode(DIRECTORY_SEPARATOR, array(__DIR__, "tlds", $params["domainObj"]->getLastTLDSegment() . ".php"));
-
     if (file_exists($extensions_path)) {
         require_once $extensions_path;
     }
 
-    $fields = array(
+    $fields = [
         'domain' => $params['domainname'],
         'period' => $params['regperiod'],
         'nameserver0' => $params['ns1'],
@@ -219,25 +246,20 @@ function rrpproxy_RegisterDomain($params)
         'nameserver3' => $params['ns4'],
         'nameserver4' => $params['ns5'],
         'ownercontact0' => $contact_id,
-        'admincontact0' => $contact_id,
-        'techcontact0' => $contact_id,
-        'billingcontact0' => $contact_id,
-        'X-WHOISPRIVACY' => $enableIdProtection
-    );
+        'admincontact0' => $admin_contact_id,
+        'techcontact0' => $admin_contact_id,
+        'billingcontact0' => $admin_contact_id,
+        'X-WHOISPRIVACY' => $params['idprotection'] ? 1 : 0
+    ];
     $request = array_merge($fields, $extensions);
 
     //Register the domain name
     try {
         $api = new RRPProxyClient();
-        $api->call('AddDomain', $request);
-
-        return array(
-            'success' => true,
-        );
+        $api->call($domainApplication ? 'AddDomainApplication' : 'AddDomain', $request);
+        return ['success' => true];
     } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+        return ['error' => $e->getMessage()];
     }
 }
 

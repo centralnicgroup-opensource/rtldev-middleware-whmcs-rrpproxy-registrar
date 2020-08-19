@@ -21,40 +21,20 @@ This Repository covers the updated WHMCS Registrar Module of RRPproxy. Source co
   * Explicit Deletions in Admin panel
 * Domain Renewal
 * IDNs Support (using idn_to_ascii)
-* DNS Management (A, AAAA, MX, CNAME, TXT)
+* TLD Pricing Sync (since WHMCS 7.10)
+* KeyDNS Management
+* DNSSEC Management
 * Web Forwarding
-* Email forwarding
-* Support for OTE testing environment
-* Support for WHOIS Privacy / ID Protection
-* Support for Bulk Update Operations
-* Support for DNSSEC Management
+* Email Forwarding
+* WHOIS Privacy / ID Protection
+* Bulk Update Operations
+* OT&E testing environment
 
 ## Unsupported Features ##
 
 * Premium Domains
 * Creating Owner/Admin Contacts on TransferDomain
 * Automatic DNS Zone Creating/Deletion if DNS Management is checked
-
-## Supported TLD-specific Additional Domain Fields ##
-
-| TLD | Status |
-| -------- | -------- |
-| .au | Supported|
-| .br | Supported|
-| .ca | Supported|
-| .cl | Supported|
-| .de | Supported|
-| .es | Supported|
-| .eu | Supported|
-| .fr | Supported|
-| .it | Supported|
-| .nu | Supported|
-| .ro | Supported|
-| .ru | Supported|
-| .se | Supported|
-| .sg | Supported|
-| .uk | Supported|
-| .us | Supported|
 
 ## Resources ##
 
@@ -86,8 +66,8 @@ Please read and follow our [Contribution Guidelines](https://github.com/rrpproxy
 
 ## Authors ##
 
-* **Zoltan Egresi** - *development* - [egresi](https://github.com/egresi)
 * **Kai Schwarz** - *development* - [PapaKai](https://github.com/papakai)
+* **Sebastian Vassiliou** - *development* - [h9k](https://github.com/h9k)
 
 See also the list of [contributors](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/graphs/contributors) who participated in this project.
 

@@ -2,7 +2,7 @@
   "schema": "1.0",
   "type": "whmcs-registrars",
   "name": "rrpproxy",
-  "license": "proprietary",
+  "license": "MIT",
   "category": "domains",
   "description": {
     "name": "RRPproxy",
@@ -13,8 +13,8 @@
   },
   "authors": [
     {
-      "name": "Zoltan Egresi",
-      "email": "egresi@globehosting.com"
+      "name": "Sebastian Vassiliou",
+      "email": "svassiliou@hexonet.net"
     }
   ]
 }

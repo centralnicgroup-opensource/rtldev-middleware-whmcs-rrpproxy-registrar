@@ -3,8 +3,8 @@
 /**
  * WHMCS RRPProxy Registrar Module
  *
- * @author Zoltan Egresi <egresi@globehosting.com>
- * Copyright 2019 Zoltan Egresi
+ * @author Sebastian Vassiliou <svassiliou@hexonet.net>
+ * Copyright 2020 Key-Systems GmbH
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
@@ -23,10 +23,14 @@ if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
 
+use Illuminate\Database\Capsule\Manager as DB;
+use Illuminate\Database\Schema\Blueprint;
 use WHMCS\Carbon;
 use WHMCS\Domain\Registrar\Domain;
-use WHMCS\Domains\DomainLookup\ResultsList;
+use WHMCS\Domains\DomainLookup\ResultsList as DomainResults;
 use WHMCS\Domains\DomainLookup\SearchResult;
+use WHMCS\Domain\TopLevel\ImportItem;
+use WHMCS\Results\ResultsList;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
 define(RRPPROXY_VERSION, "0.1.0");
@@ -1161,6 +1165,8 @@ function rrpproxy_dnssec($params)
 {
     $api = new RRPProxyClient();
     $error = null;
+    $dsData = [];
+    $keyData = [];
 
     try {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["DNSSEC"])) {
@@ -1183,12 +1189,10 @@ function rrpproxy_dnssec($params)
         $dsdata_rrp = (isset($response['property']['dnssecdsdata'])) ? $response['property']['dnssecdsdata'] : [];
         $keydata_rrp = (isset($response['property']['dnssec'])) ? $response['property']['dnssec'] : [];
 
-        $dsData = [];
         foreach ($dsdata_rrp as $ds) {
             list($keytag, $alg, $digesttype, $digest) = preg_split('/\s+/', $ds);
             array_push($dsData, ["keytag" => $keytag, "alg" => $alg, "digesttype" => $digesttype, "digest" => $digest]);
         }
-        $keyData = [];
         foreach ($keydata_rrp as $key) {
             list($flags, $protocol, $alg, $pubkey) = preg_split('/\s+/', $key);
             array_push($keyData, ["flags" => $flags, "protocol" => $protocol, "alg" => $alg, "pubkey" => $pubkey]);
@@ -1232,6 +1236,220 @@ function rrpproxy_dnssec($params)
     ];
 }
 
+function rrpproxy_ConvertPrice($price, $fromCurrency, $toCurrency)
+{
+    return round($price * rrpproxy_GetCachedExchangeRate($fromCurrency, $toCurrency));
+}
+
+$exchangeRates = [];
+
+function rrpproxy_GetCachedExchangeRate($from, $to)
+{
+    global $exchangeRates;
+
+    if ($from == $to) {
+        return 1;
+    }
+    $key = "$from-$to";
+    if (!isset($exchangeRates[$key])) {
+        $api = new RRPProxyClient();
+        try {
+            $result = $api->call('QueryExchangeRates', ['currencyfrom' => $from, 'currencyto' => $to, 'limit' => 1]);
+        } catch (Exception $ex) {
+            die("ERROR getting exchange rate $from - $to : {$ex->getMessage()}\n");
+        }
+        $exchangeRates[$key] = $result['property']['rate'][0];
+    }
+    return $exchangeRates[$key];
+}
+
+function rrpproxy_GetTldPricing(array $params)
+{
+    $ignoreZones = ['nameemail', 'nuidn']; // Those are not real TLDs but the API returns then for some reason
+
+    if (!DB::schema()->hasTable('mod_rrpproxy_zones')) {
+        DB::schema()->create('mod_rrpproxy_zones', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('zone', 45);
+            $table->string('periods', 50);
+            $table->integer('grace_days')->nullable();
+            $table->integer('redemption_days')->nullable();
+            $table->boolean('epp_required');
+            $table->boolean('id_protection');
+            $table->timestamps();
+            $table->unique('zone');
+        });
+        $mod_rrpproxy_zones = [];
+        include_once __DIR__ . '/sql/mod_rrpproxy_zones.php';
+        DB::table('mod_rrpproxy_zones')->insert($mod_rrpproxy_zones);
+        DB::table('mod_rrpproxy_zones')->update(['created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+    }
+
+    $pricelist = [];
+    $api = new RRPProxyClient();
+    try {
+        $result = $api->call('QueryZoneList');
+    } catch (Exception $e) {
+        return ['error' => 'QueryZoneList - ' . $e->getMessage()];
+    }
+
+    foreach ($result['property']['zone'] as $id => $zone) {
+        if ($result['property']['periodtype'][$id] != "YEAR") {
+            continue;
+        }
+        if (in_array($zone, $ignoreZones)) {
+            continue;
+        }
+
+        // Determine actual zones
+        $domain = $result['property']['3rds'][$id];
+        $domains = [];
+        if (strpos($domain, ' ') !== false) {
+            if (strpos($domain, ',') !== false) {
+                $domains = explode(', ', $domain);
+            } else {
+                if (preg_match('/[a-z\.]/', $zone)) {
+                    $domains[] = $zone;
+                } else {
+                    continue;
+                }
+            }
+        } else {
+            $domains[] = $domain;
+        }
+
+        foreach ($domains as $domain) {
+            $pricelist[strtolower($domain)] = [
+                "active" => $result['property']['active'][$id],
+                "yearly" => $result['property']['periodtype'][$id] == 'YEAR',
+                "count" => $result['property']['domaincount'][$id] ? $result['property']['domaincount'][$id] :  0,
+                "currency" => $result['property']['currency'][$id],
+                "annual_fee" => is_numeric($result['property']['annual'][$id]) ? $result['property']['annual'][$id] : null,
+                "application_fee" => is_numeric($result['property']['application'][$id]) ? $result['property']['application'][$id] : null,
+                "restore_fee" => is_numeric($result['property']['restore'][$id]) ? $result['property']['restore'][$id] : null,
+                "setup_fee" => is_numeric($result['property']['setup'][$id]) ? $result['property']['setup'][$id] : null,
+                "trade_fee" => is_numeric($result['property']['trade'][$id]) ? $result['property']['trade'][$id] : null,
+                "transfer_fee" => is_numeric($result['property']['transfer'][$id]) ? $result['property']['transfer'][$id] : null,
+            ];
+        }
+    }
+
+    $defaultCurrency = DB::table('tblcurrencies')->where('default', 1)->value('code');
+
+    $results = new DomainResults();
+    $maxDays = 30;
+    $maxUpdates = 100;
+    $updates = 0;
+    foreach ($pricelist as $extension => $values) {
+        if (!$values['active'] || !$values['yearly']) {
+            continue;
+        }
+
+        $zone = DB::table('mod_rrpproxy_zones')
+            ->where('zone', $extension)
+            ->first();
+
+        $updateNeeded = false;
+        if ($zone) {
+            $curDate = new DateTime();
+            try {
+                $zoneDate = new DateTime($zone->updated_at);
+                $dateDiff = $zoneDate->diff($curDate);
+                if ($dateDiff->format('%r%a') > $maxDays) {
+                    $updateNeeded = true;
+                    $updates++;
+                }
+            } catch (Exception $e) {
+                $updateNeeded = true;
+            }
+        }
+
+        if (!$zone || ($updateNeeded && $updates < $maxUpdates)) {
+            try {
+                $result = $api->call('GetZoneInfo', ['ZONE' => $extension]);
+            } catch (Exception $ex) {
+                //return ['error' => 'GetZoneInfo - ' . $ex->getMessage()];
+                continue;
+            }
+
+            if (!is_array($result)) {
+                return ['error' => 'GetZoneInfo - No response'];
+            }
+
+            $data = [
+                'zone' => $extension,
+                'periods' => $result['property']['periods'][0],
+                'grace_days' => $result['property']['autorenewgraceperioddays'][0],
+                'redemption_days' => $result['property']['redemptionperioddays'][0],
+                'epp_required' => $result['property']['authcode'][0] == 'required',
+                'id_protection' => $result['property']['rrpsupportswhoisprivacy'][0] || $result['property']['supportstrustee'][0],
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
+            DB::table('mod_rrpproxy_zones')->updateOrInsert(['zone' => $extension], $data);
+
+            $zone = DB::table('mod_rrpproxy_zones')
+                ->where('zone', $extension)
+                ->first();
+        }
+
+        if ($zone == null) {
+            continue; // let's ignore this for now...
+        }
+
+        preg_match_all("/(?:(\d+)y)+/", $zone->periods, $matches);
+        $years = $matches[1];
+
+        if (in_array($values['currency'], array_column(localAPI('GetCurrencies', [])['currencies']['currency'], 'code'))) {
+            $currency = $values['currency'];
+            $setupFee = $values['setup_fee'];
+            $annualFee = $values['annual_fee'];
+            $transferFee = $values['transfer_fee'];
+            $redemptionFee = $values['restore_fee'];
+        } else {
+            $currency = $defaultCurrency;
+            $setupFee = rrpproxy_ConvertPrice($values['setup_fee'], $values['currency'], $currency);
+            $annualFee = rrpproxy_ConvertPrice($values['annual_fee'], $values['currency'], $currency);
+            $transferFee = rrpproxy_ConvertPrice($values['transfer_fee'], $values['currency'], $currency);
+            $redemptionFee = rrpproxy_ConvertPrice($values['restore_fee'], $values['currency'], $currency);
+        }
+
+        // Workaround for stupid WHMCS logic as of 7.10 RC2
+        if ($setupFee > 0) {
+            $years = [$years[0]];
+        }
+
+        $item = (new ImportItem())
+            ->setExtension($extension)
+            ->setYears($years)
+            ->setRegisterPrice($setupFee + $annualFee)
+            ->setCurrency($currency)
+            ->setEppRequired($zone->epp_required);
+
+        if (is_numeric($annualFee)) {
+            $item->setRenewPrice($annualFee);
+        }
+
+        if (is_numeric($transferFee)) {
+            $item->setTransferPrice($transferFee);
+        }
+
+        if (is_numeric($zone->grace_days)) {
+            $item->setGraceFeeDays($zone->grace_days)
+                ->setGraceFeePrice($annualFee);
+        }
+        if (is_numeric($zone->redemption_days)) {
+            $item->setRedemptionFeeDays($zone->redemption_days);
+            if (is_numeric($redemptionFee)) {
+                $item->setRedemptionFeePrice($redemptionFee);
+            }
+        }
+
+        $results[] = $item;
+    }
+    return $results;
+}
+
 /**
  * Client Area Custom Button Array.
  *
@@ -1241,7 +1459,7 @@ function rrpproxy_dnssec($params)
  *
  * @return array
  */
-function rrpproxy_ClientAreaCustomButtonArray($params)
+function rrpproxy_ClientAreaCustomButtonArray()
 {
     return null;
 }
@@ -1252,6 +1470,7 @@ function rrpproxy_ClientAreaCustomButtonArray($params)
  * Only the functions defined within this function or the Client Area
  * Custom Button Array can be invoked by client level users.
  *
+ * @param $params
  * @return array
  */
 function rrpproxy_ClientAreaAllowedFunctions($params)
@@ -1269,13 +1488,11 @@ function rrpproxy_ClientAreaAllowedFunctions($params)
  * This function renders output to the domain details interface within
  * the client area. The return should be the HTML to be output.
  *
- * @param array $params common module parameters
- *
  * @return string HTML Output
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_ClientArea($params)
+function rrpproxy_ClientArea()
 {
     return null;
 }

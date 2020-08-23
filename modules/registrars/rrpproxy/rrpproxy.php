@@ -114,9 +114,7 @@ function rrpproxy_GetDomainInformation(array $params)
                 $domain->setDomainContactChangePending(true);
             }
         } catch (Exception $ex) {
-            return array(
-                'error' => $ex->getMessage(),
-            );
+            return ['error' => $ex->getMessage()];
         }
 
         if (isset($result['property']['x-time-to-suspension'][0])) {
@@ -136,9 +134,7 @@ function rrpproxy_GetDomainInformation(array $params)
 
         return $domain;
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -148,13 +144,9 @@ function rrpproxy_ResendIRTPVerificationEmail(array $params)
     try {
         $api = new RRPProxyClient();
         $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string)$domain->getRegistrantEmailAddress()]);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -235,7 +227,7 @@ function rrpproxy_RegisterDomain($params)
     // Loading custom RRPProxy TLD Extensions
     $extensions = [];
     $domainApplication = false;
-    $extensions_path = implode(DIRECTORY_SEPARATOR, array(__DIR__, "tlds", $params["domainObj"]->getLastTLDSegment() . ".php"));
+    $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", $params["domainObj"]->getLastTLDSegment() . ".php"]);
     if (file_exists($extensions_path)) {
         require_once $extensions_path;
     }
@@ -286,14 +278,11 @@ function rrpproxy_TransferDomain($params)
 {
     try {
         $api = new RRPProxyClient();
+        //TODO check why eppcode and not $params['transfersecret'] ?
         $api->call('TransferDomain', ['domain' => $params['domainname'], 'auth' => $params['eppcode']]);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+        return ['error' => $e->getMessage()];
     }
 }
 
@@ -327,13 +316,9 @@ function rrpproxy_RenewDomain($params)
             $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
         }
 
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -361,9 +346,7 @@ function rrpproxy_GetNameservers($params)
             'ns5' => $result['property']['nameserver'][4],
         );
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -381,25 +364,21 @@ function rrpproxy_GetNameservers($params)
  */
 function rrpproxy_SaveNameservers($params)
 {
-    $fields = array(
+    $fields = [
         'domain' => $params['sld'] . '.' . $params['tld'],
         'nameserver0' => $params['ns1'],
         'nameserver1' => $params['ns2'],
         'nameserver2' => $params['ns3'],
         'nameserver3' => $params['ns4'],
         'nameserver4' => $params['ns5'],
-    );
+    ];
 
     try {
         $api = new RRPProxyClient();
         $api->call('ModifyDomain', $fields);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -424,9 +403,7 @@ function rrpproxy_GetContactDetails($params)
 
         return $contacts;
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -471,14 +448,10 @@ function rrpproxy_SaveContactDetails($params)
         try {
             $api->call('ModifyContact', $owner);
         } catch (Exception $ex) {
-            return array(
-                'error' => $ex->getMessage(),
-            );
+            return ['error' => $ex->getMessage()];
         }
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -530,9 +503,7 @@ function rrpproxy_CheckAvailability($params)
         }
         return $results;
     } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+        return ['error' => $e->getMessage()];
     }
 }
 
@@ -568,9 +539,7 @@ function rrpproxy_GetDomainSuggestions($params)
         }
         return $results;
     } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+        return ['error' => $e->getMessage()];
     }
 }
 
@@ -596,9 +565,7 @@ function rrpproxy_GetRegistrarLock($params)
             return "locked";
         }
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -616,13 +583,9 @@ function rrpproxy_SaveRegistrarLock($params)
     try {
         $api = new RRPProxyClient();
         $api->call('ModifyDomain', ['domain' => $params['domainname'], 'transferlock' => ($params['lockenabled'] == 'locked') ? 1 : 0]);
-        return array(
-            'success' => 'success',
-        );
+        return ['success' => 'success'];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -801,9 +764,7 @@ function rrpproxy_GetEmailForwarding($params)
     try {
         $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
     } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+        return ['error' => $e->getMessage()];
     }
 
     $values = [];
@@ -827,9 +788,7 @@ function rrpproxy_SaveEmailForwarding($params)
     try {
         $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
     } catch (Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
+        return ['error' => $e->getMessage()];
     }
 
     $orig = [];
@@ -906,13 +865,9 @@ function rrpproxy_IDProtectToggle($params)
     try {
         $api = new RRPProxyClient();
         $api->call('ModifyDomain', ['domain' => $params['domainname'], 'X-WHOISPRIVACY' => ($params["protectenable"]) ? "1" : "0"]);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -936,18 +891,12 @@ function rrpproxy_GetEPPCode($params)
         $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
 
         if (strlen($response["property"]["auth"][0])) {
-            return array(
-                'eppcode' => htmlspecialchars($response["property"]["auth"][0])
-            );
+            return ['eppcode' => htmlspecialchars($response["property"]["auth"][0])];
         } else {
-            return array(
-                'error' => "No Auth Info code found!"
-            );
+            return ['error' => "No Auth Info code found!"];
         }
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -969,10 +918,9 @@ function rrpproxy_GetEPPCode($params)
  */
 function rrpproxy_ReleaseDomain($params)
 {
-// Build post data
-    $fields = array(
+    $fields = [
         'domain' => $params['domainname'],
-    );
+    ];
     if (!empty($params['transfertag'])) {
         $fields["target"] = $params['transfertag'];
     }
@@ -980,13 +928,9 @@ function rrpproxy_ReleaseDomain($params)
     try {
         $api = new RRPProxyClient();
         $api->call('PushDomain', $fields);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -1008,9 +952,7 @@ function rrpproxy_RequestDelete($params)
             'success' => true,
         );
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -1030,13 +972,9 @@ function rrpproxy_RegisterNameserver($params)
     try {
         $api = new RRPProxyClient();
         $api->call('AddNameserver', ['nameserver' => $params['nameserver'], 'ipaddress0' => $params["ipaddress"]]);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -1056,13 +994,9 @@ function rrpproxy_ModifyNameserver($params)
     try {
         $api = new RRPProxyClient();
         $api->call('ModifyNameserver', ['nameserver' => $params['nameserver'], 'delipaddress0' => $params["currentipaddress"], 'addipaddress0' => $params["newipaddress"]]);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -1080,13 +1014,9 @@ function rrpproxy_DeleteNameserver($params)
     try {
         $api = new RRPProxyClient();
         $api->call('DeleteNameserver', ['nameserver' => $params['nameserver']]);
-        return array(
-            'success' => true,
-        );
+        return ['success' => true];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -1108,13 +1038,11 @@ function rrpproxy_Sync($params)
     try {
         $api = new RRPProxyClient();
         $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
-        return array(
-            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString(), // Format: YYYY-MM-DD
-        );
+        return [
+            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString()
+        ];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -1135,14 +1063,12 @@ function rrpproxy_TransferSync($params)
     try {
         $api = new RRPProxyClient();
         $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
-        return array(
+        return [
             'completed' => true,
             'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString(), // Format: YYYY-MM-DD
-        );
+        ];
     } catch (Exception $ex) {
-        return array(
-            'error' => $ex->getMessage(),
-        );
+        return ['error' => $ex->getMessage()];
     }
 }
 

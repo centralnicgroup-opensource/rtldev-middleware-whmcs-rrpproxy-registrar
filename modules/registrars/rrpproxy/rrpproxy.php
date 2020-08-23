@@ -241,17 +241,26 @@ function rrpproxy_RegisterDomain($params)
     $fields = [
         'domain' => $params['domainname'],
         'period' => $params['regperiod'],
-        'nameserver0' => $params['ns1'],
-        'nameserver1' => $params['ns2'],
-        'nameserver2' => $params['ns3'],
-        'nameserver3' => $params['ns4'],
-        'nameserver4' => $params['ns5'],
+        'transferlock' => 1,
         'ownercontact0' => $contact_id,
         'admincontact0' => $admin_contact_id,
         'techcontact0' => $admin_contact_id,
         'billingcontact0' => $admin_contact_id,
-        'X-WHOISPRIVACY' => $params['idprotection'] ? 1 : 0
+        'nameserver0' => $params['ns1'],
+        'nameserver1' => $params['ns2']
     ];
+    if (!empty($params['ns3'])) {
+        $fields['nameserver2'] = $params['ns3'];
+    }
+    if (!empty($params['ns4'])) {
+        $fields['nameserver3'] = $params['ns4'];
+    }
+    if (!empty($params['ns5'])) {
+        $fields['nameserver4'] = $params['ns5'];
+    }
+    if ($params['idprotection']) {
+        $fields['X-WHOISPRIVACY'] = 1;
+    }
     $request = array_merge($fields, $extensions);
 
     //Register the domain name

@@ -72,6 +72,12 @@ function rrpproxy_getConfigArray()
             'Type' => 'yesno',
             'Description' => 'Enables DNSSEC configuration in the client area'
         ],
+        'DeleteMode' => [
+            'FriendlyName' => 'Domain deletion mode',
+            'Type' => 'dropdown',
+            'Options' => ['ImmediateIfPossible', 'AutoDeleteOnExpiry'],
+            'Default' => 'ImmediateIfPossible',
+        ],
         'TestMode' => [
             'Type' => 'yesno',
             'Description' => 'Tick to enable OT&amp;E',
@@ -945,12 +951,20 @@ function rrpproxy_ReleaseDomain($params)
  */
 function rrpproxy_RequestDelete($params)
 {
+    $api = new RRPProxyClient();
+
+    if ($params['DeleteMode'] == 'ImmediateIfPossible') {
+        try {
+            $api->call('DeleteDomain', ['domain' => $params['domainname']]);
+            return ['success' => true];
+        } catch (Exception $ex) {
+            // We revert to AUTODELETE
+        }
+    }
+
     try {
-        $api = new RRPProxyClient();
-        $api->call('DeleteDomain', ['domain' => $params['domainname']]);
-        return array(
-            'success' => true,
-        );
+        $api->call('SetDomainRenewalmode', ['domain' => $params['domainname'], 'renewalmode' => 'AUTODELETE']);
+        return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }

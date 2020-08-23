@@ -353,13 +353,21 @@ function rrpproxy_GetNameservers($params)
     try {
         $api = new RRPProxyClient();
         $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
-        return array(
+
+        $values = [
             'ns1' => $result['property']['nameserver'][0],
-            'ns2' => $result['property']['nameserver'][1],
-            'ns3' => $result['property']['nameserver'][2],
-            'ns4' => $result['property']['nameserver'][3],
-            'ns5' => $result['property']['nameserver'][4],
-        );
+            'ns2' => $result['property']['nameserver'][1]
+        ];
+        if (isset($result['property']['nameserver'][2])) {
+            $values['ns3'] = $result['property']['nameserver'][2];
+        }
+        if (isset($result['property']['nameserver'][3])) {
+            $values['ns4'] = $result['property']['nameserver'][3];
+        }
+        if (isset($result['property']['nameserver'][4])) {
+            $values['ns5'] = $result['property']['nameserver'][4];
+        }
+        return $values;
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }

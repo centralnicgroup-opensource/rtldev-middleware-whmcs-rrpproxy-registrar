@@ -930,7 +930,16 @@ function rrpproxy_GetEPPCode($params)
 {
     try {
         $api = new RRPProxyClient();
-        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        $needSetAuthcode = ['de', 'be', 'no', 'sg', 'eu'];
+        if (in_array($params['tld'], $needSetAuthcode)) {
+            try {
+                $response = $api->call('SetAuthcode', ['domain' => $params['domainname']]);
+            } catch (Exception $ex) {
+                $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+            }
+        } else {
+            $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        }
 
         if (strlen($response["property"]["auth"][0])) {
             return ['eppcode' => htmlspecialchars($response["property"]["auth"][0])];

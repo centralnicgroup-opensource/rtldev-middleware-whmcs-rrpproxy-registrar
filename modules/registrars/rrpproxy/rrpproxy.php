@@ -326,7 +326,7 @@ function rrpproxy_RenewDomain($params)
         $api = new RRPProxyClient();
 
         if (in_array($params["domainObj"]->getLastTLDSegment(), $renewOnceTlds)) {
-            $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCETHENAUTODELETE']);
+            $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
         } else {
             $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
         }

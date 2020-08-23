@@ -514,14 +514,12 @@ function rrpproxy_SaveContactDetails($params)
  */
 function rrpproxy_CheckAvailability($params)
 {
-
-    /* need to implement PREMIUM DOMAINS */
-
+    // TODO need to implement PREMIUM DOMAINS
     try {
         $api = new RRPProxyClient();
 
-        if ($params['isIdnDomain']) {
-            $searchTerm = empty($params['punyCodeSearchTerm']) ? strtolower($params['searchTerm']) : strtolower($params['punyCodeSearchTerm']);
+        if ($params['isIdnDomain'] && !empty($params['punyCodeSearchTerm'])) {
+            $searchTerm = strtolower($params['punyCodeSearchTerm']);
         } else {
             $searchTerm = strtolower($params['searchTerm']);
         }
@@ -532,12 +530,15 @@ function rrpproxy_CheckAvailability($params)
         foreach ($tldsToInclude as $tld) {
             $result = $api->call('CheckDomain', ['domain' => $searchTerm . $tld]);
             $searchResult = new SearchResult($searchTerm, $tld);
-            if ($result['code'] == 210) {
-                $status = SearchResult::STATUS_NOT_REGISTERED;
-            } elseif ($result['code'] == 211) {
-                $status = SearchResult::STATUS_REGISTERED;
-            } else {
-                $status = SearchResult::STATUS_TLD_NOT_SUPPORTED;
+            switch ($result['code']) {
+                case 210:
+                    $status = SearchResult::STATUS_NOT_REGISTERED;
+                    break;
+                case 211:
+                    $status = SearchResult::STATUS_REGISTERED;
+                    break;
+                default:
+                    $status = SearchResult::STATUS_TLD_NOT_SUPPORTED;
             }
             $searchResult->setStatus($status);
             $results->append($searchResult);

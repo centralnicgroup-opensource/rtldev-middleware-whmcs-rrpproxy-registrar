@@ -422,7 +422,25 @@ function rrpproxy_GetContactDetails($params)
     try {
         $api = new RRPProxyClient();
         $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
-        $contacts['Registrant'] = $api->getContactInfo($response["property"]["ownercontact"][0]);
+
+        $owner_id = $response["property"]["ownercontact"][0];
+        $admin_id = $response["property"]["admincontact"][0];
+        $bill_id = $response["property"]["billingcontact"][0];
+        $tech_id = $response["property"]["techcontact"][0];
+
+        $contacts['Registrant'] = $api->getContactInfo($owner_id);
+
+        if (\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
+            if ($admin_id) {
+                $contacts['Admin'] = $api->getContactInfo($admin_id);
+            }
+            if ($bill_id) {
+                $contacts['Billing'] = $api->getContactInfo($bill_id);
+            }
+            if ($tech_id) {
+                $contacts['Tech'] = $api->getContactInfo($tech_id);
+            }
+        }
 
         return $contacts;
     } catch (Exception $ex) {

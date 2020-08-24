@@ -118,7 +118,8 @@ class RRPProxyClient
         if ($supportsHandleUpdate) {
             try {
                 $response = $this->call('StatusContact', ['contact' => $contact_id]);
-                if ($contact['firstname'] == $response['property']['firstname'][0]
+                if (
+                    $contact['firstname'] == $response['property']['firstname'][0]
                     && $contact['lastname'] == $response['property']['lastname'][0]
                     && $contact['organization'] == $response['property']['organization'][0]
                 ) {

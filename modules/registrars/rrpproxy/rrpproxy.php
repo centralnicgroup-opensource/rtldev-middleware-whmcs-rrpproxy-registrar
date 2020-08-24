@@ -463,37 +463,74 @@ function rrpproxy_GetContactDetails($params)
  */
 function rrpproxy_SaveContactDetails($params)
 {
-    $contactDetails = $params['contactdetails'];
+    $domain = $params['sld'] . '.' . $params['tld'];
+    $values = [];
+    $args = [];
 
     try {
         $api = new RRPProxyClient();
-        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
-
-        $owner = [
-            'contact' => $response["property"]["ownercontact"][0],
-            'validation' => true,
-            'firstname' => $contactDetails['Registrant']['First Name'],
-            'lastname' => $contactDetails['Registrant']['Last Name'],
-            'organization' => $contactDetails['Registrant']['Company Name'],
-            'street0' => $contactDetails['Registrant']['Address'],
-            'street1' => $contactDetails['Registrant']['Address 2'],
-            'city' => $contactDetails['Registrant']['City'],
-            'state' => $contactDetails['Registrant']['State'],
-            'zip' => $contactDetails['Registrant']['Postcode'],
-            'country' => $contactDetails['Registrant']['Country'],
-            'phone' => $contactDetails['Registrant']['Phone'],
-            'fax' => $contactDetails['Registrant']['Fax'],
-            'email' => $contactDetails['Registrant']['Email'],
-        ];
-
-        try {
-            $api->call('ModifyContact', $owner);
-        } catch (Exception $ex) {
-            return ['error' => $ex->getMessage()];
-        }
+        $response = $api->call('StatusDomain', ['domain' => $domain]);
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
+
+    $owner_id = $response['property']['ownercontact'][0];
+    $admin_id = $response['property']['admincontact'][0];
+    $bill_id = $response['property']['billingcontact'][0];
+    $tech_id = $response['property']['techcontact'][0];
+
+    //TODO put in SQL
+    $tld_handle_updates = ['ac','academy','accountants','actor','adult','ae','af','ag','agency','airforce','alsace','am','amsterdam','apartments','archi','army','as','asia','associates','at','attorney','auction','audio','band','bar','bargains','bayern','be','beer','berlin','best','bid','bike','bingo','bio','biz','black','blackfriday','blue','boutique','brussels','build','builders','business','buzz','bz','bzh','cab','cafe','camera','camp','capetown','capital','cards','care','career','careers','casa','cash','casino','catering','cc','center','ceo','cf','chat','cheap','christmas','church','city','cl','claims','cleaning','click','clinic','clothing','club','cm','cn','co','co.com','co.uk','co.za','coach','codes','coffee','college','cologne','com','com.so','com.tr','com.vc','community','company','computer','condos','construction','consulting','contractors','cooking','cool','country','credit','creditcard','cricket','cruises','cymru','dance','date','dating','de','deals','degree','delivery','democrat','dental','dentist','desi','design','diamonds','diet','digital','direct','directory','discount','dm','domains','durban','ec','education','ee','email','energy','engineer','engineering','enterprises','equipment','estate','eus','events','exchange','expert','exposed','express','fail','faith','farm','fashion','fi','finance','financial','fish','fishing','fit','fitness','flights','florist','flowers','football','forsale','foundation','fr','frl','fund','furniture','futbol','ga','gal','gallery','garden','gd','gent','gg','gift','gifts','gives','gl','glass','global','gold','golf','gr','graphics','gratis','green','gripe','guide','guitars','guru','hamburg','haus','healthcare','help','hiphop','hiv','hn','holdings','holiday','horse','host','hosting','house','how','hu','ie','im','immo','immobilien','in','industries','info','info.pl','ink','institute','insure','international','investments','irish','it','je','jetzt','jewelry','jobs','joburg','juegos','kaufen','kim','kitchen','kiwi','koeln','kr','la','land','lat','lawyer','lc','lease','legal','lgbt','life','lighting','limited','limo','link','loans','london','lt','ltda','lu','luxe','luxury','maison','management','market','marketing','markets','md','me.uk','media','meet','melbourne','memorial','menu','mg','ml','mn','mobi','moda','moe','money','mortgage','moscow','nagoya','name','navy','net','net.so','net.vc','network','news','ngo','ninja','nl','no','nrw','nu','nyc','okinawa','one','ong','onl','ooo','org','org.so','org.uk','org.vc','organic','osaka','paris','partners','parts','party','pe','photo','photography','photos','physio','pics','pictures','pink','pizza','pl','place','plumbing','plus','pm','poker','porn','press','pro','productions','properties','property','pub','qpon','quebec','re','recipes','red','rehab','reise','reisen','rentals','repair','report','republican','rest','restaurant','review','reviews','rich','rio','rip','rocks','rodeo','ru','ruhr','ryukyu','saarland','sale','sarl','sc','school','schule','science','scot','services','sexy','sg','sh','shiksha','shoes','show','si','singles','site','so','social','software','solar','solutions','soy','space','style','sucks','supplies','supply','support','surf','surgery','sx','sydney','systems','taipei','tattoo','tax','tc','team','tech','technology','tennis','tf','tienda','tips','tires','tirol','tk','tm','today','tokyo','tools','top','tours','town','toys','trade','training','travel','tv','tw','ua','uk','university','uno','us','vacations','vc','vegas','ventures','versicherung','vet','vg','viajes','video','villas','vision','vlaanderen','vodka','vote','voting','voto','voyage','wales','wang','watch','webcam','website','wedding','wf','whoswho','wien','wiki','work','works','world','ws','wtf','xn--3ds443g','xn--4gbrim','xn--55qx5d','xn--6frz82g','xn--80adxhks','xn--80asehdb','xn--80aswg','xn--c1avg','xn--czr694b','xn--fiq228c5hs','xn--i1b6b1a6a2e','xn--io0a7i','xn--mgbab2bd','xn--ngbc5azd','xn--nqv7f','xn--q9jyb4c','xn--vhquv','xxx','xyz','yoga','yokohama','yt','zone'];
+    $supports_handle_update = in_array(strtolower($params['tld']), $tld_handle_updates);
+
+    //TODO put in SQL
+    $tld_need_trade = ['at','be','cn','es','fr','it','nl','no','pt','sg'];
+    $needs_trade = in_array(strtolower($params['tld']), $tld_need_trade);
+
+    $contact_id = $api->updateContact($supports_handle_update, $owner_id, $params['contactdetails']['Registrant']);
+    if ($contact_id != null) {
+        $args['ownercontact0'] = $contact_id;
+    }
+    if (\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
+        if ($admin_id) {
+            $contact_id = $api->updateContact($supports_handle_update, $admin_id, $params['contactdetails']['Admin']);
+            if ($contact_id != null) {
+                $args['admincontact0'] = $contact_id;
+            }
+        }
+        if ($bill_id) {
+            $contact_id = $api->updateContact($supports_handle_update, $bill_id, $params['contactdetails']['Billing']);
+            if ($contact_id != null) {
+                $args['billingcontact0'] = $contact_id;
+            }
+        }
+        if ($tech_id) {
+            $contact_id = $api->updateContact($supports_handle_update, $tech_id, $params['contactdetails']['Tech']);
+            if ($contact_id != null) {
+                $args['techcontact0'] = $contact_id;
+            }
+        }
+    }
+
+    try {
+        if ($args && $needs_trade && $args['ownercontact0']) {
+            $tradeParams['domain'] = $domain;
+            $tradeParams = ['ownercontact0' => $args['ownercontact0']];
+            if ($params['tld'] == "swiss") {
+                $tradeParams['X-SWISS-UID'] = $params['additionalfields']['UID'];
+            }
+            $api->call('TradeDomain', $tradeParams);
+            unset($args['ownercontact0']);
+        }
+        if ($args) {
+            $args['domain'] = $domain;
+            $api->call('ModifyDomain', $args);
+        }
+    } catch (Exception $ex) {
+        $values['error'] = $ex->getMessage();
+    }
+
+    return $values;
 }
 
 /**

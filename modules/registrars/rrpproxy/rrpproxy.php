@@ -320,17 +320,30 @@ function rrpproxy_TransferDomain($params)
 function rrpproxy_RenewDomain($params)
 {
     $domain = WHMCS\Domain\Domain::find($params['domainid']);
+    $api = new RRPProxyClient();
+
+    //TODO This avoids to renew domain after client paid, if we already did so because of autorenew or manually. Feels dirty though...
+    try {
+        $response = $api->call('StatusDomain', ['domain' => $domain]);
+        $date = $response['property']['registrationexpirationdate'][0];
+        $expirationDate = new DateTime(date('Y-m-d', strtotime($date)));
+        $currentDate = new DateTime(date('Y-m-d'));
+        $diff = $currentDate->diff($expirationDate);
+        $years = round($diff->days / 365);
+        if ($years > 0) {
+            $params["regperiod"] -= $years;
+        }
+    } catch (Exception $e) {
+        return ['error' => 'Exception: ' . $e->getMessage()];
+    }
 
     try {
         $renewOnceTlds = ['at', 'be', 'ch', 'co.za', 'de', 'dk', 'fr', 'hu', 'is', 'it', 'jp', 'li', 'lu', 'my', 'nl', 'pm', 're', 'ru', 'sk', 'su', 'ua'];
-        $api = new RRPProxyClient();
-
         if (in_array($params["domainObj"]->getLastTLDSegment(), $renewOnceTlds)) {
             $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
         } else {
             $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
         }
-
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];

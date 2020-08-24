@@ -76,22 +76,69 @@ class RRPProxyClient
     {
         try {
             $response = $this->call('StatusContact', ['contact' => $contact]);
-            $values["First Name"] = $response["property"]["firstname"][0];
-            $values["Last Name"] = $response["property"]["lastname"][0];
-            $values["Company Name"] = $response["property"]["organization"][0];
-            $values["Address"] = $response["property"]["street"][0];
-            $values["Address 2"] = $response["property"]["street"][1];
-            $values["City"] = $response["property"]["city"][0];
-            $values["State"] = $response["property"]["state"][0];
-            $values["Postcode"] = $response["property"]["zip"][0];
-            $values["Country"] = $response["property"]["country"][0];
-            $values["Phone"] = $response["property"]["phone"][0];
-            $values["Fax"] = $response["property"]["fax"][0];
-            $values["Email"] = $response["property"]["email"][0];
+            return [
+                "First Name" => $response["property"]["firstname"][0],
+                "Last Name" => $response["property"]["lastname"][0],
+                "Company Name" => $response["property"]["organization"][0], //TODO check why not 'Organisation Name'
+                "Address" => $response["property"]["street"][0], //TODO check why not 'Address 1'
+                "Address 2" => $response["property"]["street"][1],
+                "City" => $response["property"]["city"][0],
+                "State" => $response["property"]["state"][0],
+                "Postcode" => $response["property"]["zip"][0],
+                "Country" => $response["property"]["country"][0],
+                "Phone" => $response["property"]["phone"][0],
+                "Fax" => $response["property"]["fax"][0],
+                "Email" => $response["property"]["email"][0]
+            ];
         } catch (\Exception $ex) {
             return [];
         }
-        return $values;
+    }
+
+    public function updateContact($supportsHandleUpdate, $contact_id, $contactDetails)
+    {
+        $contact = [
+            //'validation' => true,
+            'firstname' => $contactDetails['First Name'],
+            'lastname' => $contactDetails['Last Name'],
+            'organization' => $contactDetails['Organisation Name'], //Company Name
+            'street' => $contactDetails['Address 1'],
+            //'street0' => $contactDetails['Address'],
+            //'street1' => $contactDetails['Address 2'],
+            'city' => $contactDetails['City'],
+            'state' => $contactDetails['State'],
+            'country' => $contactDetails['Country'],
+            'zip' => $contactDetails['Postcode'],
+            'phone' => $contactDetails['Phone'],
+            'fax' => $contactDetails['Fax'],
+            'email' => $contactDetails['Email']
+        ];
+
+        $needNewContact = true;
+        if ($supportsHandleUpdate) {
+            try {
+                $response = $this->call('StatusContact', ['contact' => $contact_id]);
+                if ($contact['firstname'] == $response['property']['firstname'][0]
+                    && $contact['lastname'] == $response['property']['lastname'][0]
+                    && $contact['organization'] == $response['property']['organization'][0]
+                ) {
+                    $contact['contact'] = $contact_id;
+                    $this->call('ModifyContact', $contact);
+                    $needNewContact = false;
+                }
+            } catch (\Exception $ex) {
+                $needNewContact = true;
+            }
+        }
+        if ($needNewContact) {
+            try {
+                $response = $this->call('AddContact', $contact);
+                return $response['property']['contact'][0];
+            } catch (\Exception $ex) {
+                return null;
+            }
+        }
+        return null;
     }
 
     public function call($command, $params = array())

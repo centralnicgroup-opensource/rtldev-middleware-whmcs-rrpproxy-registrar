@@ -603,14 +603,14 @@ function rrpproxy_CheckAvailability($params)
  */
 function rrpproxy_GetDomainSuggestions($params)
 {
-    /* need to implement PREMIUM DOMAINS */
+    // TODO need to implement PREMIUM DOMAINS
     try {
         $api = new RRPProxyClient();
         $response = $api->call('GetNameSuggestion', ['name' => $params['searchTerm'], 'show-unavailable' => 0]);
         $results = new ResultsList();
         foreach ($response['property']['name'] as $key => $domain) {
             $d = explode('.', $domain, 2);
-            if ($response['property']['availability'][$key] == 'available') {//include only available domains
+            if ($response['property']['availability'][$key] == 'available') {
                 $searchResult = new SearchResult($d[0], $d[1]);
                 $searchResult->setStatus(SearchResult::STATUS_NOT_REGISTERED);
                 $results->append($searchResult);
@@ -1212,7 +1212,7 @@ function rrpproxy_TransferSync($params)
             $nameservers = explode(',', $order->nameservers);
             $i = 0;
             foreach ($nameservers as $nameserver) {
-                $args['ownercontact'.$i++] = $nameserver;
+                $args['ownercontact' . $i++] = $nameserver;
             }
         }
 

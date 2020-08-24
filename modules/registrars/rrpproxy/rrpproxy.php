@@ -1097,7 +1097,11 @@ function rrpproxy_Sync($params)
     try {
         $api = new RRPProxyClient();
         $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
+        $status = strtolower($result['property']['status'][0]);
         return [
+            'active' => $status == 'active',
+            'expired' => $status == 'expired',
+            // TODO I used renewaldate instead, but why?
             'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString()
         ];
     } catch (Exception $ex) {
@@ -1119,16 +1123,141 @@ function rrpproxy_Sync($params)
  */
 function rrpproxy_TransferSync($params)
 {
+    $values = [];
+    $api = new RRPProxyClient();
+    $domain = $params['sld'] . '.' . $params['tld'];
+
     try {
-        $api = new RRPProxyClient();
-        $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
-        return [
-            'completed' => true,
-            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString(), // Format: YYYY-MM-DD
-        ];
+        $result = $api->call('StatusDomain', ['domain' => $domain]);
+        $values['completed'] = true;
     } catch (Exception $ex) {
-        return ['error' => $ex->getMessage()];
+        try {
+            $transfer = $api->call('StatusDomainTransfer', ['domain' => $params['sld'] . '.' . $params['tld']]);
+            if (strpos($transfer['property']['transferlog'][count($transfer['property']['transferlog']) - 1], "[SUCCESSFUL]")) {
+                $values['completed'] = true;
+            } else {
+                switch (strtolower($transfer['property']['transferstatus'][0])) {
+                    case 'successful':
+                        $values['completed'] = true;
+                        break;
+                    case 'failed':
+                        $values['failed'] = true;
+                        break;
+                }
+            }
+        } catch (Exception $ex) {
+            $values['error'] = $ex->getMessage();
+        }
     }
+
+    if ($values['completed']) {
+        $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString();
+
+        // TODO do we want to keep this?
+        if ($params['tld'] == 'ch') {
+            $values['nextduedate'] = $values['expirydate'];
+            $values['nextinvoicedate'] = $values['expirydate'];
+        }
+
+        // Enable transfer lock and set Admin/Billing/Tech contacts if needed
+        $args = ['transferlock' => 1];
+
+        // Get order
+        $order = DB::table('tblorders as o')
+            ->join('tbldomains as d', 'd.orderid', 'o.id')
+            ->where('d.domain', $domain)
+            ->select('o.userid', 'o.contactid', 'o.nameservers')
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        // Set nameservers if defined in order
+        if ($order->nameservers) {
+            $nameservers = explode(',', $order->nameservers);
+            $i = 0;
+            foreach ($nameservers as $nameserver) {
+                $args['ownercontact'.$i++] = $nameserver;
+            }
+        }
+
+        // Set owner contact if missing
+        $owner_id = $result['property']['ownercontact'][0];
+        if (!$owner_id) {
+            $contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
+                ->where('id', $order->contactid ? $order->contactid : $order->userid)
+                ->select('firstname', 'lastname', 'address1', 'city', 'state', 'country', 'postcode', 'phonenumber', 'companyname')
+                ->first();
+
+            if ($contact) {
+                $owner_contact = [
+                    'firstname' => $contact->firstname,
+                    'lastname' => $contact->lastname,
+                    'street' => $contact->address1,
+                    'city' => $contact->city,
+                    'state' => $contact->state,
+                    'country' => $contact->country,
+                    'zip' => $contact->postcode,
+                    'phone' => str_replace(' ', '', $contact->phonenumber),
+                    'email' => $contact->email
+                ];
+                if ($contact->companyname) {
+                    $owner_contact['organization'] = $contact->companyname;
+                }
+                try {
+                    $contact = $api->call('AddContact', $owner_contact);
+                    $owner_id = $contact['property']['contact'][0];
+                    $args['ownercontact0'] = $owner_id;
+                } catch (Exception $ex) {
+                    $values['error'] = $ex->getMessage();
+                }
+            }
+        }
+
+        // Set admin/billing/tech contacts
+        if (!\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
+            $admin_contact = [
+                "firstname" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminFirstName"), ENT_QUOTES),
+                "lastname" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminLastName"), ENT_QUOTES),
+                "street" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminAddress1"), ENT_QUOTES),
+                "city" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminCity"), ENT_QUOTES),
+                "state" => html_entity_decode(convertStateToCode(
+                    \WHMCS\Config\Setting::getValue("RegistrarAdminStateProvince"),
+                    \WHMCS\Config\Setting::getValue("RegistrarAdminCountry")
+                ), ENT_QUOTES),
+                "zip" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminPostalCode"), ENT_QUOTES),
+                "country" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminCountry"), ENT_QUOTES),
+                "phone" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminPhone"), ENT_QUOTES),
+                "email" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminEmailAddress"), ENT_QUOTES)
+            ];
+            $companyName = \WHMCS\Config\Setting::getValue("RegistrarAdminCompanyName");
+            if ($companyName) {
+                $admin_contact['organization'] = $companyName;
+            }
+            $street2 = \WHMCS\Config\Setting::getValue("RegistrarAdminAddress2");
+            if (strlen($street2)) {
+                $admin_contact["street"] .= " , " . html_entity_decode($street2, ENT_QUOTES);
+            }
+
+            try {
+                $contact = $api->call('AddContact', $admin_contact);
+                $contact_id = $contact['property']['contact'][0];
+                $args['admincontact0'] = $params['tld'] == 'it' ? $owner_id : $contact_id;
+                $args['billingcontact0'] = $contact_id;
+                $args['techcontact0'] = $contact_id;
+            } catch (Exception $ex) {
+                $values['error'] = $ex->getMessage();
+            }
+        }
+
+        // Update domain
+        try {
+            $args['domain'] = $domain;
+            $api->call('ModifyDomain', $args);
+        } catch (Exception $ex) {
+            $values['error'] = $ex->getMessage();
+        }
+    }
+
+    return $values;
 }
 
 /**

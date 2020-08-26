@@ -91,7 +91,7 @@ function rrpproxy_getConfigArray()
     ];
 }
 
-function rrpproxy_GetDomainInformation(array $params)
+function keysystems_GetDomainInformation(array $params)
 {
     try {
         $api = new RRPProxyClient();
@@ -144,9 +144,9 @@ function rrpproxy_GetDomainInformation(array $params)
     }
 }
 
-function rrpproxy_ResendIRTPVerificationEmail(array $params)
+function keysystems_ResendIRTPVerificationEmail(array $params)
 {
-    $domain = rrpproxy_GetDomainInformation($params);
+    $domain = keysystems_GetDomainInformation($params);
     try {
         $api = new RRPProxyClient();
         $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string)$domain->getRegistrantEmailAddress()]);
@@ -172,7 +172,7 @@ function rrpproxy_ResendIRTPVerificationEmail(array $params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_RegisterDomain($params)
+function keysystems_RegisterDomain($params)
 {
     $params = injectDomainObjectIfNecessary($params);
 
@@ -289,7 +289,7 @@ function rrpproxy_RegisterDomain($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_TransferDomain($params)
+function keysystems_TransferDomain($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -317,7 +317,7 @@ function rrpproxy_TransferDomain($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_RenewDomain($params)
+function keysystems_RenewDomain($params)
 {
     $domain = WHMCS\Domain\Domain::find($params['domainid']);
     $api = new RRPProxyClient();
@@ -361,7 +361,7 @@ function rrpproxy_RenewDomain($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_GetNameservers($params)
+function keysystems_GetNameservers($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -398,7 +398,7 @@ function rrpproxy_GetNameservers($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_SaveNameservers($params)
+function keysystems_SaveNameservers($params)
 {
     $fields = [
         'domain' => $params['sld'] . '.' . $params['tld'],
@@ -430,7 +430,7 @@ function rrpproxy_SaveNameservers($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_GetContactDetails($params)
+function keysystems_GetContactDetails($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -474,7 +474,7 @@ function rrpproxy_GetContactDetails($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_SaveContactDetails($params)
+function keysystems_SaveContactDetails($params)
 {
     $domain = $params['sld'] . '.' . $params['tld'];
     $values = [];
@@ -562,7 +562,7 @@ function rrpproxy_SaveContactDetails($params)
  *
  * @see \WHMCS\Domains\DomainLookup\SearchResult
  */
-function rrpproxy_CheckAvailability($params)
+function keysystems_CheckAvailability($params)
 {
     // TODO need to implement PREMIUM DOMAINS
     try {
@@ -614,7 +614,7 @@ function rrpproxy_CheckAvailability($params)
  *
  * @see \WHMCS\Domains\DomainLookup\SearchResult
  */
-function rrpproxy_GetDomainSuggestions($params)
+function keysystems_GetDomainSuggestions($params)
 {
     // TODO need to implement PREMIUM DOMAINS
     try {
@@ -646,7 +646,7 @@ function rrpproxy_GetDomainSuggestions($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_GetRegistrarLock($params)
+function keysystems_GetRegistrarLock($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -670,7 +670,7 @@ function rrpproxy_GetRegistrarLock($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_SaveRegistrarLock($params)
+function keysystems_SaveRegistrarLock($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -690,7 +690,7 @@ function rrpproxy_SaveRegistrarLock($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_GetDNS($params)
+function keysystems_GetDNS($params)
 {
     $values = [];
 
@@ -759,7 +759,7 @@ function rrpproxy_GetDNS($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_SaveDNS($params)
+function keysystems_SaveDNS($params)
 {
     $values = [];
     $oldZone = [];
@@ -850,7 +850,7 @@ function rrpproxy_SaveDNS($params)
  * @return array
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  */
-function rrpproxy_GetEmailForwarding($params)
+function keysystems_GetEmailForwarding($params)
 {
     $api = new RRPProxyClient();
     try {
@@ -874,7 +874,7 @@ function rrpproxy_GetEmailForwarding($params)
  * @return array
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  */
-function rrpproxy_SaveEmailForwarding($params)
+function keysystems_SaveEmailForwarding($params)
 {
     $api = new RRPProxyClient();
     try {
@@ -952,7 +952,7 @@ function rrpproxy_SaveEmailForwarding($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_IDProtectToggle($params)
+function keysystems_IDProtectToggle($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -976,7 +976,7 @@ function rrpproxy_IDProtectToggle($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_GetEPPCode($params)
+function keysystems_GetEPPCode($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -1017,7 +1017,7 @@ function rrpproxy_GetEPPCode($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_ReleaseDomain($params)
+function keysystems_ReleaseDomain($params)
 {
     $fields = [
         'domain' => $params['domainname'],
@@ -1044,7 +1044,7 @@ function rrpproxy_ReleaseDomain($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_RequestDelete($params)
+function keysystems_RequestDelete($params)
 {
     $api = new RRPProxyClient();
 
@@ -1076,7 +1076,7 @@ function rrpproxy_RequestDelete($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_RegisterNameserver($params)
+function keysystems_RegisterNameserver($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -1098,7 +1098,7 @@ function rrpproxy_RegisterNameserver($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_ModifyNameserver($params)
+function keysystems_ModifyNameserver($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -1118,7 +1118,7 @@ function rrpproxy_ModifyNameserver($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_DeleteNameserver($params)
+function keysystems_DeleteNameserver($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -1142,7 +1142,7 @@ function rrpproxy_DeleteNameserver($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_Sync($params)
+function keysystems_Sync($params)
 {
     try {
         $api = new RRPProxyClient();
@@ -1171,7 +1171,7 @@ function rrpproxy_Sync($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_TransferSync($params)
+function keysystems_TransferSync($params)
 {
     $values = [];
     $api = new RRPProxyClient();
@@ -1317,7 +1317,7 @@ function rrpproxy_TransferSync($params)
  *
  * @return array an array with a template name
  */
-function rrpproxy_dnssec($params)
+function keysystems_dnssec($params)
 {
     $api = new RRPProxyClient();
     $error = null;
@@ -1392,14 +1392,14 @@ function rrpproxy_dnssec($params)
     ];
 }
 
-function rrpproxy_ConvertPrice($price, $fromCurrency, $toCurrency)
+function keysystems_ConvertPrice($price, $fromCurrency, $toCurrency)
 {
-    return round($price * rrpproxy_GetCachedExchangeRate($fromCurrency, $toCurrency));
+    return round($price * keysystems_GetCachedExchangeRate($fromCurrency, $toCurrency));
 }
 
 $exchangeRates = [];
 
-function rrpproxy_GetCachedExchangeRate($from, $to)
+function keysystems_GetCachedExchangeRate($from, $to)
 {
     global $exchangeRates;
 
@@ -1419,7 +1419,7 @@ function rrpproxy_GetCachedExchangeRate($from, $to)
     return $exchangeRates[$key];
 }
 
-function rrpproxy_GetTldPricing(array $params)
+function keysystems_GetTldPricing(array $params)
 {
     $ignoreZones = ['nameemail', 'nuidn']; // Those are not real TLDs but the API returns then for some reason
 
@@ -1564,10 +1564,10 @@ function rrpproxy_GetTldPricing(array $params)
             $redemptionFee = $values['restore_fee'];
         } else {
             $currency = $defaultCurrency;
-            $setupFee = rrpproxy_ConvertPrice($values['setup_fee'], $values['currency'], $currency);
-            $annualFee = rrpproxy_ConvertPrice($values['annual_fee'], $values['currency'], $currency);
-            $transferFee = rrpproxy_ConvertPrice($values['transfer_fee'], $values['currency'], $currency);
-            $redemptionFee = rrpproxy_ConvertPrice($values['restore_fee'], $values['currency'], $currency);
+            $setupFee = keysystems_ConvertPrice($values['setup_fee'], $values['currency'], $currency);
+            $annualFee = keysystems_ConvertPrice($values['annual_fee'], $values['currency'], $currency);
+            $transferFee = keysystems_ConvertPrice($values['transfer_fee'], $values['currency'], $currency);
+            $redemptionFee = keysystems_ConvertPrice($values['restore_fee'], $values['currency'], $currency);
         }
 
         // Workaround for stupid WHMCS logic as of 7.10 RC2
@@ -1610,12 +1610,10 @@ function rrpproxy_GetTldPricing(array $params)
  * Client Area Custom Button Array.
  *
  * Allows you to define additional actions your module supports.
- * In this example, we register a Push Domain action which triggers
- * the `rrpproxy_push` function when invoked.
  *
  * @return array
  */
-function rrpproxy_ClientAreaCustomButtonArray()
+function keysystems_ClientAreaCustomButtonArray()
 {
     return null;
 }
@@ -1629,7 +1627,7 @@ function rrpproxy_ClientAreaCustomButtonArray()
  * @param $params
  * @return array
  */
-function rrpproxy_ClientAreaAllowedFunctions($params)
+function keysystems_ClientAreaAllowedFunctions($params)
 {
     $functions = [];
     if ($params['DNSSEC']) {
@@ -1648,7 +1646,7 @@ function rrpproxy_ClientAreaAllowedFunctions($params)
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function rrpproxy_ClientArea()
+function keysystems_ClientArea()
 {
     return null;
 }

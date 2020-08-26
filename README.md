@@ -1,4 +1,4 @@
-# WHMCS "RRPproxy" Registrar Module #
+# WHMCS RRPproxy Registrar Module #
 
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![Build Status](https://travis-ci.com/rrpproxy/whmcs-rrpproxy-registrar.svg?branch=master)](https://travis-ci.com/rrpproxy/whmcs-rrpproxy-registrar)
@@ -33,8 +33,6 @@ This Repository covers the updated WHMCS Registrar Module of RRPproxy. Source co
 ## Unsupported Features ##
 
 * Premium Domains
-* Creating Owner/Admin Contacts on TransferDomain
-* Automatic DNS Zone Creating/Deletion if DNS Management is checked
 
 ## Resources ##
 
@@ -51,11 +49,11 @@ E.g.
 
 ## Usage Guide ##
 
-Go to your WHMCS Admin Area -> `Setup > Products/Services > Domain Registrars` and activate RRPProxy Registrar module by clicking the Activate button and enter your RRPProxy credentials (username/password).
+Go to your WHMCS Admin Area -> `Setup > Products/Services > Domain Registrars` and activate the Key-Systems RRPproxy Registrar module by clicking the Activate button and enter your RRPproxy credentials (username/password).
 
 ## Minimum Requirements ##
 
-* WHMCS 7.6
+* WHMCS 7.6+ or 8.x
 
 For the latest WHMCS minimum system requirements, please refer to
 [https://docs.whmcs.com/System_Requirements](https://docs.whmcs.com/System_Requirements)

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * WHMCS RRPProxy Registrar Module
+ * WHMCS RRPproxy Registrar Module
  *
  * @author Sebastian Vassiliou <svassiliou@hexonet.net>
  * Copyright 2020 Key-Systems GmbH
@@ -52,13 +52,13 @@ function rrpproxy_getConfigArray()
             'Type' => 'text',
             'Size' => '25',
             'Default' => '1024',
-            'Description' => 'Enter your RRPProxy Username',
+            'Description' => 'Enter your RRPproxy Username',
         ],
         'Password' => [
             'Type' => 'password',
             'Size' => '25',
             'Default' => '',
-            'Description' => 'Enter your RRPProxy Password',
+            'Description' => 'Enter your RRPproxy Password',
         ],
         'DefaultTTL' => [
             'FriendlyName' => 'Default TTL',
@@ -86,7 +86,7 @@ function rrpproxy_getConfigArray()
             'Type' => 'password',
             'Size' => '25',
             'Default' => '',
-            'Description' => 'Enter your RRPProxy OT&amp;E Password',
+            'Description' => 'Enter your RRPproxy OT&amp;E Password',
         ]
     ];
 }
@@ -230,7 +230,7 @@ function keysystems_RegisterDomain($params)
         return ['error' => $e->getMessage()];
     }
 
-    // Loading custom RRPProxy TLD Extensions
+    // Loading custom RRPproxy TLD Extensions
     $extensions = [];
     $domainApplication = false;
     $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", $params["domainObj"]->getLastTLDSegment() . ".php"]);

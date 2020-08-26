@@ -1,7 +1,7 @@
 <?php
 
 /**
- * WHMCS RRPProxy API Client
+ * WHMCS RRPproxy API Client
  *
  * @author Sebastian Vassiliou <svassiliou@hexonet.net>
  * Copyright 2020 Key-Systems GmbH
@@ -30,7 +30,7 @@ class RRPProxyClient
 
     public function __construct()
     {
-        $registrar = Capsule::table('tblregistrars')->where('registrar', 'rrpproxy')->get();
+        $registrar = Capsule::table('tblregistrars')->where('registrar', 'keysystems')->get();
         if (empty($registrar)) {
             throw \Exception('Registrar data not found');
         }
@@ -187,7 +187,7 @@ class RRPProxyClient
         curl_close($ch);
 
         $results = $this->processResponse($response);
-        logModuleCall('rrpproxy', $command, $params, $response, $results, array($params['username'], $params['password']));
+        logModuleCall('keysystems', $command, $params, $response, $results, array($params['username'], $params['password']));
 
 
         if ((preg_match('/^2/', $results['code']))) { //Successful Return Codes (2xx), return the results.

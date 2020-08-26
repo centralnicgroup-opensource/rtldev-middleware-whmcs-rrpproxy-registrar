@@ -47,7 +47,7 @@ Copy all files from the extracted archive to your WHMCS directory, while keeping
 
 E.g.
 
-`modules/registrars/rrpproxy/rrpproxy.php => $YOUR_WHMCS_ROOT/modules/registrars/rrpproxy/rrpproxy.php`
+`modules/registrars/keysystems/ => $YOUR_WHMCS_ROOT/modules/registrars/keysystems/`
 
 ## Usage Guide ##
 

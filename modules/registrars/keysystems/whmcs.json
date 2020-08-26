@@ -1,7 +1,7 @@
 {
   "schema": "1.0",
   "type": "whmcs-registrars",
-  "name": "rrpproxy",
+  "name": "keysystems",
   "license": "MIT",
   "category": "domains",
   "description": {

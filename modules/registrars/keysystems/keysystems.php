@@ -39,21 +39,25 @@ require_once __DIR__ . '/lib/RRPProxyClient.php';
 
 function keysystems_getConfigArray()
 {
+    $oldModule = 'rrpproxy';
+    $newModule = 'keysystems';
     if (@$_GET['migrate']) {
-        DB::table('tbldomains')
-            ->where('registrar', 'rrpproxy')
-            ->update(['registrar' => 'keysystems']);
+        DB::table('tbldomains')->where('registrar', $oldModule)->update(['registrar' => $newModule]);
+        DB::table('tbldomainpricing')->where('autoreg', $oldModule)->update(['autoreg' => $newModule]);
+        DB::table('tblregistrars')->where('registrar', $oldModule)->delete();
     }
-    $domains = DB::table('tbldomains')->where('registrar', 'rrpproxy')->get()->count();
     $migrate = '';
-    if ($domains > 0) {
-        $migrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-default'>Migrate {$domains} domains</a>";
+    if (
+        DB::table('tbldomains')->where('registrar', $oldModule)->count() > 0
+        || DB::table('tbldomainpricing')->where('autoreg', $oldModule)->count() > 0
+    ) {
+        $migrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-default'>Migrate from old RRPproxy module</a>";
     }
 
     return [
         'FriendlyName' => [
             'Type' => 'System',
-            'Value' => 'RRPProxy v' . RRPPROXY_VERSION
+            'Value' => 'RRPproxy v' . RRPPROXY_VERSION
         ],
         'Description' => [
             'Type' => 'System',

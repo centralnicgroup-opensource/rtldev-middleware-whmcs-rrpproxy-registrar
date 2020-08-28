@@ -71,6 +71,6 @@ See also the list of [contributors](https://github.com/rrpproxy/whmcs-rrpproxy-r
 
 ## License ##
 
-This project is licensed under the MIT License - see the [LICENSE.md](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/blob/master/LICENSE.md) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/blob/master/LICENSE) file for details.
 
 [RRPproxy / Key-Systems GmbH](https://www.rrpproxy.net/)

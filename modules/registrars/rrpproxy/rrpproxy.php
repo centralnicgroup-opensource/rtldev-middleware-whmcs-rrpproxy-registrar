@@ -33,24 +33,16 @@ use WHMCS\Domain\TopLevel\ImportItem;
 use WHMCS\Results\ResultsList;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
-define(RRPPROXY_VERSION, "0.1.0");
+define("RRPPROXY_VERSION", "0.1.0");
 
 require_once __DIR__ . '/lib/RRPProxyClient.php';
-
-function rrpproxy_MetaData()
-{
-    return array(
-        'DisplayName' => 'RRPProxy',
-        'APIVersion' => '1.0',
-    );
-}
 
 function rrpproxy_getConfigArray()
 {
     return [
         'FriendlyName' => [
             'Type' => 'System',
-            'Value' => 'RRPProxy',
+            'Value' => 'RRPProxy v'. RRPPROXY_VERSION
         ],
         'Description' => [
             'Type' => 'System',

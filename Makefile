@@ -1,7 +1,7 @@
 VERSION := $(shell node -p "require('./release.json').version")
 REPOID := whmcs-rrpproxy-registrar
 FOLDER := pkg/$(REPOID)-$(VERSION)
-LIBFOLDER := $(FOLDER)/modules/registrars/rrpproxy/lib
+LIBFOLDER := $(FOLDER)/modules/registrars/keysystems/lib
 
 clean:
 	rm -rf $(FOLDER)
@@ -14,7 +14,7 @@ buildsources:
 	rm -rf /tmp/$(REPOID)
 	git clone https://github.com/rrpproxy/$(REPOID).wiki.git /tmp/$(REPOID)
 	# Copy files (archive contents)
-	cp -a modules/registrars/rrpproxy $(FOLDER)/install/modules/registrars
+	cp -a modules/registrars/keysystems $(FOLDER)/install/modules/registrars
 	cp README.md HISTORY.md CONTRIBUTING.md LICENSE /tmp/$(REPOID)/*.md $(FOLDER)/docs
 	# Clean up files
 	rm -rf $(FOLDER)/docs/_*.md $(FOLDER)/docs/Home.md /tmp/$(REPOID)

@@ -37,7 +37,7 @@ define("RRPPROXY_VERSION", "0.1.0");
 
 require_once __DIR__ . '/lib/RRPProxyClient.php';
 
-function rrpproxy_getConfigArray()
+function keysystems_getConfigArray()
 {
     if (@$_GET['migrate']) {
         DB::table('tbldomains')
@@ -53,7 +53,7 @@ function rrpproxy_getConfigArray()
     return [
         'FriendlyName' => [
             'Type' => 'System',
-            'Value' => 'RRPProxy v'. RRPPROXY_VERSION
+            'Value' => 'RRPProxy v' . RRPPROXY_VERSION
         ],
         'Description' => [
             'Type' => 'System',

@@ -1,7 +1,7 @@
 VERSION := $(shell node -p "require('./release.json').version")
 REPOID := whmcs-rrpproxy-registrar
 FOLDER := pkg/$(REPOID)-$(VERSION)
-LIBFOLDER := $(FOLDER)/modules/registrars/keysystems/lib
+LIBFOLDER := $(FOLDER)/install/modules/registrars/keysystems/lib
 
 clean:
 	rm -rf $(FOLDER)

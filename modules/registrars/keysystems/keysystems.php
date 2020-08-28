@@ -39,6 +39,17 @@ require_once __DIR__ . '/lib/RRPProxyClient.php';
 
 function rrpproxy_getConfigArray()
 {
+    if (@$_GET['migrate']) {
+        DB::table('tbldomains')
+            ->where('registrar', 'rrpproxy')
+            ->update(['registrar' => 'keysystems']);
+    }
+    $domains = DB::table('tbldomains')->where('registrar', 'rrpproxy')->get()->count();
+    $migrate = '';
+    if ($domains > 0) {
+        $migrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-default'>Migrate {$domains} domains</a>";
+    }
+
     return [
         'FriendlyName' => [
             'Type' => 'System',
@@ -46,7 +57,7 @@ function rrpproxy_getConfigArray()
         ],
         'Description' => [
             'Type' => 'System',
-            'Value' => "Don't have a RRPproxy Account yet?" . " Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>",
+            'Value' => "Don't have a RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>" . $migrate,
         ],
         'Username' => [
             'Type' => 'text',
@@ -293,7 +304,6 @@ function keysystems_TransferDomain($params)
 {
     try {
         $api = new RRPProxyClient();
-        //TODO check why eppcode and not $params['transfersecret'] ?
         $api->call('TransferDomain', ['domain' => $params['domainname'], 'auth' => $params['eppcode']]);
         return ['success' => true];
     } catch (Exception $e) {
@@ -1148,10 +1158,10 @@ function keysystems_Sync($params)
         $api = new RRPProxyClient();
         $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
         $status = strtolower($result['property']['status'][0]);
+        //TODO set admin/tech/billing contacts if necessary
         return [
             'active' => $status == 'active',
             'expired' => $status == 'expired',
-            // TODO I used renewaldate instead, but why?
             'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString()
         ];
     } catch (Exception $ex) {
@@ -1203,8 +1213,9 @@ function keysystems_TransferSync($params)
     if ($values['completed']) {
         $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString();
 
-        // TODO do we want to keep this?
-        if ($params['tld'] == 'ch') {
+        //TODO put in SQL
+        $tldWithoutRenew = ['ch', 'li'];
+        if (in_array($params['tld'], $tldWithoutRenew)) {
             $values['nextduedate'] = $values['expirydate'];
             $values['nextinvoicedate'] = $values['expirydate'];
         }

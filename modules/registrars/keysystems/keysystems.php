@@ -39,6 +39,32 @@ require_once __DIR__ . '/lib/RRPProxyClient.php';
 
 function keysystems_getConfigArray()
 {
+    if (DB::schema()->hasTable('mod_rrpproxy_zones') && !DB::schema()->hasColumn('mod_rrpproxy_zones', 'supports_renewals')) {
+        DB::schema()->drop('mod_rrpproxy_zones');
+    }
+
+    if (!DB::schema()->hasTable('mod_rrpproxy_zones')) {
+        DB::schema()->create('mod_rrpproxy_zones', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('zone', 45);
+            $table->string('periods', 50);
+            $table->integer('grace_days')->nullable();
+            $table->integer('redemption_days')->nullable();
+            $table->boolean('epp_required');
+            $table->boolean('id_protection');
+            $table->boolean('supports_renewals');
+            $table->boolean('renews_on_transfer');
+            $table->boolean('handle_updatable');
+            $table->boolean('needs_trade');
+            $table->timestamps();
+            $table->unique('zone');
+        });
+        $mod_rrpproxy_zones = [];
+        include_once __DIR__ . '/sql/mod_rrpproxy_zones.php';
+        DB::table('mod_rrpproxy_zones')->insert($mod_rrpproxy_zones);
+        DB::table('mod_rrpproxy_zones')->update(['created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+    }
+
     $oldModule = 'rrpproxy';
     $newModule = 'keysystems';
     if (@$_GET['migrate']) {
@@ -336,7 +362,7 @@ function keysystems_RenewDomain($params)
     $domain = WHMCS\Domain\Domain::find($params['domainid']);
     $api = new RRPProxyClient();
 
-    //TODO This avoids to renew domain after client paid, if we already did so because of autorenew or manually. Feels dirty though...
+    // This avoids to renew domain after client paid, if we already did so because of autorenew or manually.
     try {
         $response = $api->call('StatusDomain', ['domain' => $domain]);
         $date = $response['property']['registrationexpirationdate'][0];
@@ -352,8 +378,8 @@ function keysystems_RenewDomain($params)
     }
 
     try {
-        $renewOnceTlds = ['at', 'be', 'ch', 'co.za', 'de', 'dk', 'fr', 'hu', 'is', 'it', 'jp', 'li', 'lu', 'my', 'nl', 'pm', 're', 'ru', 'sk', 'su', 'ua'];
-        if (in_array($params["domainObj"]->getLastTLDSegment(), $renewOnceTlds)) {
+        $zoneInfo = $api->getZoneInfo($params["domainObj"]->getLastTLDSegment());
+        if (!$zoneInfo->supports_renewals) {
             $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
         } else {
             $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
@@ -506,33 +532,27 @@ function keysystems_SaveContactDetails($params)
     $bill_id = $response['property']['billingcontact'][0];
     $tech_id = $response['property']['techcontact'][0];
 
-    //TODO put in SQL
-    $tld_handle_updates = ['ac','academy','accountants','actor','adult','ae','af','ag','agency','airforce','alsace','am','amsterdam','apartments','archi','army','as','asia','associates','at','attorney','auction','audio','band','bar','bargains','bayern','be','beer','berlin','best','bid','bike','bingo','bio','biz','black','blackfriday','blue','boutique','brussels','build','builders','business','buzz','bz','bzh','cab','cafe','camera','camp','capetown','capital','cards','care','career','careers','casa','cash','casino','catering','cc','center','ceo','cf','chat','cheap','christmas','church','city','cl','claims','cleaning','click','clinic','clothing','club','cm','cn','co','co.com','co.uk','co.za','coach','codes','coffee','college','cologne','com','com.so','com.tr','com.vc','community','company','computer','condos','construction','consulting','contractors','cooking','cool','country','credit','creditcard','cricket','cruises','cymru','dance','date','dating','de','deals','degree','delivery','democrat','dental','dentist','desi','design','diamonds','diet','digital','direct','directory','discount','dm','domains','durban','ec','education','ee','email','energy','engineer','engineering','enterprises','equipment','estate','eus','events','exchange','expert','exposed','express','fail','faith','farm','fashion','fi','finance','financial','fish','fishing','fit','fitness','flights','florist','flowers','football','forsale','foundation','fr','frl','fund','furniture','futbol','ga','gal','gallery','garden','gd','gent','gg','gift','gifts','gives','gl','glass','global','gold','golf','gr','graphics','gratis','green','gripe','guide','guitars','guru','hamburg','haus','healthcare','help','hiphop','hiv','hn','holdings','holiday','horse','host','hosting','house','how','hu','ie','im','immo','immobilien','in','industries','info','info.pl','ink','institute','insure','international','investments','irish','it','je','jetzt','jewelry','jobs','joburg','juegos','kaufen','kim','kitchen','kiwi','koeln','kr','la','land','lat','lawyer','lc','lease','legal','lgbt','life','lighting','limited','limo','link','loans','london','lt','ltda','lu','luxe','luxury','maison','management','market','marketing','markets','md','me.uk','media','meet','melbourne','memorial','menu','mg','ml','mn','mobi','moda','moe','money','mortgage','moscow','nagoya','name','navy','net','net.so','net.vc','network','news','ngo','ninja','nl','no','nrw','nu','nyc','okinawa','one','ong','onl','ooo','org','org.so','org.uk','org.vc','organic','osaka','paris','partners','parts','party','pe','photo','photography','photos','physio','pics','pictures','pink','pizza','pl','place','plumbing','plus','pm','poker','porn','press','pro','productions','properties','property','pub','qpon','quebec','re','recipes','red','rehab','reise','reisen','rentals','repair','report','republican','rest','restaurant','review','reviews','rich','rio','rip','rocks','rodeo','ru','ruhr','ryukyu','saarland','sale','sarl','sc','school','schule','science','scot','services','sexy','sg','sh','shiksha','shoes','show','si','singles','site','so','social','software','solar','solutions','soy','space','style','sucks','supplies','supply','support','surf','surgery','sx','sydney','systems','taipei','tattoo','tax','tc','team','tech','technology','tennis','tf','tienda','tips','tires','tirol','tk','tm','today','tokyo','tools','top','tours','town','toys','trade','training','travel','tv','tw','ua','uk','university','uno','us','vacations','vc','vegas','ventures','versicherung','vet','vg','viajes','video','villas','vision','vlaanderen','vodka','vote','voting','voto','voyage','wales','wang','watch','webcam','website','wedding','wf','whoswho','wien','wiki','work','works','world','ws','wtf','xn--3ds443g','xn--4gbrim','xn--55qx5d','xn--6frz82g','xn--80adxhks','xn--80asehdb','xn--80aswg','xn--c1avg','xn--czr694b','xn--fiq228c5hs','xn--i1b6b1a6a2e','xn--io0a7i','xn--mgbab2bd','xn--ngbc5azd','xn--nqv7f','xn--q9jyb4c','xn--vhquv','xxx','xyz','yoga','yokohama','yt','zone'];
-    $supports_handle_update = in_array(strtolower($params['tld']), $tld_handle_updates);
+    $zoneInfo = $api->getZoneInfo($params['tld']);
 
-    //TODO put in SQL
-    $tld_need_trade = ['at','be','cn','es','fr','it','nl','no','pt','sg'];
-    $needs_trade = in_array(strtolower($params['tld']), $tld_need_trade);
-
-    $contact_id = $api->updateContact($supports_handle_update, $owner_id, $params['contactdetails']['Registrant']);
+    $contact_id = $api->updateContact($zoneInfo->handle_updatable, $owner_id, $params['contactdetails']['Registrant']);
     if ($contact_id != null) {
         $args['ownercontact0'] = $contact_id;
     }
     if (\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
         if ($admin_id) {
-            $contact_id = $api->updateContact($supports_handle_update, $admin_id, $params['contactdetails']['Admin']);
+            $contact_id = $api->updateContact($zoneInfo->handle_updatable, $admin_id, $params['contactdetails']['Admin']);
             if ($contact_id != null) {
                 $args['admincontact0'] = $contact_id;
             }
         }
         if ($bill_id) {
-            $contact_id = $api->updateContact($supports_handle_update, $bill_id, $params['contactdetails']['Billing']);
+            $contact_id = $api->updateContact($zoneInfo->handle_updatable, $bill_id, $params['contactdetails']['Billing']);
             if ($contact_id != null) {
                 $args['billingcontact0'] = $contact_id;
             }
         }
         if ($tech_id) {
-            $contact_id = $api->updateContact($supports_handle_update, $tech_id, $params['contactdetails']['Tech']);
+            $contact_id = $api->updateContact($zoneInfo->handle_updatable, $tech_id, $params['contactdetails']['Tech']);
             if ($contact_id != null) {
                 $args['techcontact0'] = $contact_id;
             }
@@ -540,7 +560,7 @@ function keysystems_SaveContactDetails($params)
     }
 
     try {
-        if ($args && $needs_trade && $args['ownercontact0']) {
+        if ($args && $zoneInfo->needs_trade && $args['ownercontact0']) {
             $tradeParams['domain'] = $domain;
             $tradeParams = ['ownercontact0' => $args['ownercontact0']];
             if ($params['tld'] == "swiss") {
@@ -994,7 +1014,7 @@ function keysystems_GetEPPCode($params)
 {
     try {
         $api = new RRPProxyClient();
-        $needSetAuthcode = ['de', 'be', 'no', 'sg', 'eu'];
+        $needSetAuthcode = ['de', 'be', 'no', 'eu'];
         if (in_array($params['tld'], $needSetAuthcode)) {
             try {
                 $response = $api->call('SetAuthcode', ['domain' => $params['domainname']]);
@@ -1217,9 +1237,8 @@ function keysystems_TransferSync($params)
     if ($values['completed']) {
         $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString();
 
-        //TODO put in SQL
-        $tldWithoutRenew = ['ch', 'li'];
-        if (in_array($params['tld'], $tldWithoutRenew)) {
+        $zoneInfo = $api->getZoneInfo($params['tld']);
+        if (!$zoneInfo->renews_on_transfer) {
             $values['nextduedate'] = $values['expirydate'];
             $values['nextinvoicedate'] = $values['expirydate'];
         }
@@ -1438,24 +1457,6 @@ function keysystems_GetTldPricing(array $params)
 {
     $ignoreZones = ['nameemail', 'nuidn']; // Those are not real TLDs but the API returns then for some reason
 
-    if (!DB::schema()->hasTable('mod_rrpproxy_zones')) {
-        DB::schema()->create('mod_rrpproxy_zones', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('zone', 45);
-            $table->string('periods', 50);
-            $table->integer('grace_days')->nullable();
-            $table->integer('redemption_days')->nullable();
-            $table->boolean('epp_required');
-            $table->boolean('id_protection');
-            $table->timestamps();
-            $table->unique('zone');
-        });
-        $mod_rrpproxy_zones = [];
-        include_once __DIR__ . '/sql/mod_rrpproxy_zones.php';
-        DB::table('mod_rrpproxy_zones')->insert($mod_rrpproxy_zones);
-        DB::table('mod_rrpproxy_zones')->update(['created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
-    }
-
     $pricelist = [];
     $api = new RRPProxyClient();
     try {
@@ -1508,62 +1509,12 @@ function keysystems_GetTldPricing(array $params)
     $defaultCurrency = DB::table('tblcurrencies')->where('default', 1)->value('code');
 
     $results = new DomainResults();
-    $maxDays = 30;
-    $maxUpdates = 100;
-    $updates = 0;
     foreach ($pricelist as $extension => $values) {
         if (!$values['active'] || !$values['yearly']) {
             continue;
         }
 
-        $zone = DB::table('mod_rrpproxy_zones')
-            ->where('zone', $extension)
-            ->first();
-
-        $updateNeeded = false;
-        if ($zone) {
-            $curDate = new DateTime();
-            try {
-                $zoneDate = new DateTime($zone->updated_at);
-                $dateDiff = $zoneDate->diff($curDate);
-                if ($dateDiff->format('%r%a') > $maxDays) {
-                    $updateNeeded = true;
-                    $updates++;
-                }
-            } catch (Exception $e) {
-                $updateNeeded = true;
-            }
-        }
-
-        if (!$zone || ($updateNeeded && $updates < $maxUpdates)) {
-            try {
-                $result = $api->call('GetZoneInfo', ['ZONE' => $extension]);
-            } catch (Exception $ex) {
-                //return ['error' => 'GetZoneInfo - ' . $ex->getMessage()];
-                continue;
-            }
-
-            if (!is_array($result)) {
-                return ['error' => 'GetZoneInfo - No response'];
-            }
-
-            $data = [
-                'zone' => $extension,
-                'periods' => $result['property']['periods'][0],
-                'grace_days' => $result['property']['autorenewgraceperioddays'][0],
-                'redemption_days' => $result['property']['redemptionperioddays'][0],
-                'epp_required' => $result['property']['authcode'][0] == 'required',
-                'id_protection' => $result['property']['rrpsupportswhoisprivacy'][0] || $result['property']['supportstrustee'][0],
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ];
-            DB::table('mod_rrpproxy_zones')->updateOrInsert(['zone' => $extension], $data);
-
-            $zone = DB::table('mod_rrpproxy_zones')
-                ->where('zone', $extension)
-                ->first();
-        }
-
+        $zone = $api->getZoneInfo($extension);
         if ($zone == null) {
             continue; // let's ignore this for now...
         }

@@ -21,7 +21,7 @@
 
 namespace WHMCS\Module\Registrar\RRPProxy;
 
-use WHMCS\Database\Capsule;
+use Illuminate\Database\Capsule\Manager as DB;
 
 class RRPProxyClient
 {
@@ -30,7 +30,7 @@ class RRPProxyClient
 
     public function __construct()
     {
-        $registrar = Capsule::table('tblregistrars')->where('registrar', 'keysystems')->get();
+        $registrar = DB::table('tblregistrars')->where('registrar', 'keysystems')->get();
         if (empty($registrar)) {
             throw \Exception('Registrar data not found');
         }
@@ -79,15 +79,15 @@ class RRPProxyClient
             return [
                 "First Name" => $response["property"]["firstname"][0],
                 "Last Name" => $response["property"]["lastname"][0],
-                "Company Name" => $response["property"]["organization"][0], //TODO check why not 'Organisation Name'
-                "Address" => $response["property"]["street"][0], //TODO check why not 'Address 1'
-                "Address 2" => $response["property"]["street"][1],
+                "Company Name" => $response["property"]["organization"][0],
+                "Address" => $response["property"]["street"][0],
+                "Address 2" => @$response["property"]["street"][1],
                 "City" => $response["property"]["city"][0],
                 "State" => $response["property"]["state"][0],
                 "Postcode" => $response["property"]["zip"][0],
                 "Country" => $response["property"]["country"][0],
                 "Phone" => $response["property"]["phone"][0],
-                "Fax" => $response["property"]["fax"][0],
+                "Fax" => @$response["property"]["fax"][0],
                 "Email" => $response["property"]["email"][0]
             ];
         } catch (\Exception $ex) {
@@ -140,6 +140,67 @@ class RRPProxyClient
             }
         }
         return null;
+    }
+
+    public function getZoneInfo($tld)
+    {
+        $maxDays = 30;
+        $maxUpdates = 100;
+        $updates = DB::table('mod_rrpproxy_zones')
+            ->where('updated_at', '>', date('Y-m-d H:i:s', strtotime('-1 hour')))
+            ->count();
+
+        $zone = DB::table('mod_rrpproxy_zones')
+            ->where('zone', $tld)
+            ->first();
+
+        $updateNeeded = false;
+        if ($zone) {
+            $curDate = new \DateTime();
+            try {
+                $zoneDate = new \DateTime($zone->updated_at);
+                $dateDiff = $zoneDate->diff($curDate);
+                if ($dateDiff->format('%r%a') > $maxDays) {
+                    $updateNeeded = true;
+                }
+            } catch (\Exception $e) {
+                $updateNeeded = true;
+            }
+        }
+
+        if (!$zone || ($updateNeeded && $updates < $maxUpdates)) {
+            try {
+                $result = $this->call('GetZoneInfo', ['ZONE' => $tld]);
+            } catch (\Exception $ex) {
+                return $zone;
+            }
+
+            if (!is_array($result)) {
+                return ['error' => 'GetZoneInfo - No response'];
+            }
+
+            $data = [
+                'zone' => $tld,
+                'periods' => $result['property']['periods'][0],
+                'grace_days' => $result['property']['autorenewgraceperioddays'][0],
+                'redemption_days' => $result['property']['redemptionperioddays'][0],
+                'epp_required' => $result['property']['authcode'][0] == 'required',
+                'id_protection' => $result['property']['rrpsupportswhoisprivacy'][0] || $result['property']['supportstrustee'][0],
+                'supports_renewals' => $result['property']['renewalperiods'][0] != 'n/a',
+                'renews_on_transfer' => $result['property']['renewalattransfer'][0] == 1 || $result['property']['renewalaftertransfer'][0] == 1,
+                'handle_updatable' => $result['property']['handlesupdateable'][0] == 1,
+                'needs_trade' => strtoupper($result['property']['ownerchangeprocess'][0]) == 'TRADE',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
+            DB::table('mod_rrpproxy_zones')->updateOrInsert(['zone' => $tld], $data);
+
+            $zone = DB::table('mod_rrpproxy_zones')
+                ->where('zone', $tld)
+                ->first();
+        }
+
+        return $zone;
     }
 
     public function call($command, $params = array())

@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.2.0...v0.2.1) (2020-09-06)
+
+
+### Bug Fixes
+
+* **semantic-release:** updateVersion.sh now works again on linux ([17b5dbc](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/17b5dbcb8aecd5682c94ddf6126c08843c7f4516))
+
 # [0.2.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.1.0...v0.2.0) (2020-09-05)
 
 

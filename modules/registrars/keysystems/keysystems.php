@@ -72,13 +72,28 @@ function keysystems_getConfigArray()
         DB::table('tbldomainpricing')->where('autoreg', $oldModule)->update(['autoreg' => $newModule]);
         DB::table('tblregistrars')->where('registrar', $oldModule)->delete();
     }
-    $migrate = '';
+    $msgMigrate = '';
     if (
         DB::table('tbldomains')->where('registrar', $oldModule)->count() > 0
         || DB::table('tbldomainpricing')->where('autoreg', $oldModule)->count() > 0
     ) {
-        $migrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-default'>Migrate from old RRPproxy module</a>";
+        $msgMigrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-default' title='Click here to automatically migrate domains and TLD prices related to RRPproxy to this module!'>Migrate from old RRPproxy module</a>";
     }
+
+    $data = file_get_contents('https://raw.githubusercontent.com/rrpproxy/whmcs-rrpproxy-registrar/master/release.json');
+    if (!$data) {
+        $msgUpdate = '<br /><i class="fas fa-times-circle"></i>Unable to check for updates';
+    } else {
+        $json = json_decode($data);
+        if (version_compare(RRPPROXY_VERSION, $json->version, '<')) {
+            $msgUpdate = '<br /><i class="fas fa-exclamation-circle"></i> Update available! ';
+            $msgUpdate .= '<a class="btn btn-default btn-sm" href="https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases" target="_blank"><i class="fab fa-github"></i> Get it on GitHub</a>';
+        } else {
+            $msgUpdate = '<br /><i class="fas fa-check-circle"></i>You are up to date!';
+        }
+    }
+
+    $msgRegister = "Don't have a RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>";
 
     return [
         'FriendlyName' => [
@@ -87,7 +102,7 @@ function keysystems_getConfigArray()
         ],
         'Description' => [
             'Type' => 'System',
-            'Value' => "Don't have a RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>" . $migrate,
+            'Value' => $msgRegister . $msgUpdate . $msgMigrate,
         ],
         'Username' => [
             'Type' => 'text',

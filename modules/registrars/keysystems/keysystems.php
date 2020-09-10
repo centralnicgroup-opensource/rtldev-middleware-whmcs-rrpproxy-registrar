@@ -82,14 +82,14 @@ function keysystems_getConfigArray()
 
     $data = file_get_contents('https://raw.githubusercontent.com/rrpproxy/whmcs-rrpproxy-registrar/master/release.json');
     if (!$data) {
-        $msgUpdate = '<br /><i class="fas fa-times-circle"></i>Unable to check for updates';
+        $msgUpdate = '<br /><i class="fas fa-times-circle"></i> Unable to check for updates';
     } else {
         $json = json_decode($data);
         if (version_compare(RRPPROXY_VERSION, $json->version, '<')) {
             $msgUpdate = '<br /><i class="fas fa-exclamation-circle"></i> Update available! ';
             $msgUpdate .= '<a class="btn btn-default btn-sm" href="https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases" target="_blank"><i class="fab fa-github"></i> Get it on GitHub</a>';
         } else {
-            $msgUpdate = '<br /><i class="fas fa-check-circle"></i>You are up to date!';
+            $msgUpdate = '<br /><i class="fas fa-check-circle"></i> You are up to date!';
         }
     }
 

@@ -374,12 +374,11 @@ function keysystems_TransferDomain($params)
  */
 function keysystems_RenewDomain($params)
 {
-    $domain = WHMCS\Domain\Domain::find($params['domainid']);
     $api = new RRPProxyClient();
 
     // This avoids to renew domain after client paid, if we already did so because of autorenew or manually.
     try {
-        $response = $api->call('StatusDomain', ['domain' => $domain]);
+        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
         $date = $response['property']['registrationexpirationdate'][0];
         $expirationDate = new DateTime(date('Y-m-d', strtotime($date)));
         $currentDate = new DateTime(date('Y-m-d'));
@@ -389,15 +388,18 @@ function keysystems_RenewDomain($params)
             $params["regperiod"] -= $years;
         }
     } catch (Exception $e) {
-        return ['error' => 'Exception: ' . $e->getMessage()];
+        return ['error' => $e->getMessage()];
     }
 
     try {
+        $domain = WHMCS\Domain\Domain::find($params['domainid']);
         $zoneInfo = $api->getZoneInfo($params["domainObj"]->getLastTLDSegment());
-        if (!$zoneInfo->supports_renewals) {
-            $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
-        } else {
-            $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
+        if ($params["regperiod"] > 0) {
+            if (!$zoneInfo->supports_renewals) {
+                $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
+            } else {
+                $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
+            }
         }
         return ['success' => true];
     } catch (Exception $ex) {

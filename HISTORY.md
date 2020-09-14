@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.1...v0.3.2) (2020-09-14)
+
+
+### Bug Fixes
+
+* **semantic-release:** release test ([b80ee96](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/b80ee9616f876ba2acc96a736b1f12832d65e88a))
+
 ## [0.3.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.0...v0.3.1) (2020-09-14)
 
 

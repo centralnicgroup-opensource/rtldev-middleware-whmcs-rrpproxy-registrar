@@ -32,7 +32,7 @@ use WHMCS\Domain\TopLevel\ImportItem;
 use WHMCS\Results\ResultsList;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
-define("RRPPROXY_VERSION", "0.3.1");
+define("RRPPROXY_VERSION", "0.3.2");
 
 require_once __DIR__ . '/lib/RRPProxyClient.php';
 

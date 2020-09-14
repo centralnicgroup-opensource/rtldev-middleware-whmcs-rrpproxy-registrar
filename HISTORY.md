@@ -1,3 +1,17 @@
+# [0.3.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.2.1...v0.3.0) (2020-09-14)
+
+
+### Bug Fixes
+
+* **additional-fields:** fix path in additionalfields resource file ([b31e993](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/b31e993babff59c50c9a42d2f5ab9ef418f31f6b))
+* **renewdomain:** fix domain renewal ([5bdc390](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/5bdc390ccd58393b453d976955b89f1f217a4b44))
+
+
+### Features
+
+* **config:** implement update checker ([87859b5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/87859b5f4979a587abedc48399097e70a5fee3fb))
+* **zoneinfo:** use zone info from api to determine features ([ee41939](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/ee41939e39ce8106168dd242f245f30a5fb9d560))
+
 ## [0.2.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.2.0...v0.2.1) (2020-09-06)
 
 

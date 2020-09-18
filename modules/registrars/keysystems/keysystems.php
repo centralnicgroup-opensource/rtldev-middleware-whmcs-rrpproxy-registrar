@@ -26,10 +26,9 @@ use Illuminate\Database\Capsule\Manager as DB;
 use Illuminate\Database\Schema\Blueprint;
 use WHMCS\Carbon;
 use WHMCS\Domain\Registrar\Domain;
-use WHMCS\Domains\DomainLookup\ResultsList as DomainResults;
+use WHMCS\Domains\DomainLookup\ResultsList;
 use WHMCS\Domains\DomainLookup\SearchResult;
 use WHMCS\Domain\TopLevel\ImportItem;
-use WHMCS\Results\ResultsList;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
 define("RRPPROXY_VERSION", "0.3.2");
@@ -1524,7 +1523,7 @@ function keysystems_GetTldPricing(array $params)
 
     $defaultCurrency = DB::table('tblcurrencies')->where('default', 1)->value('code');
 
-    $results = new DomainResults();
+    $results = new ResultsList();
     foreach ($pricelist as $extension => $values) {
         if (!$values['active'] || !$values['yearly']) {
             continue;

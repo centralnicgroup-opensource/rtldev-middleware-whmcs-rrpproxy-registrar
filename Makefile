@@ -15,6 +15,7 @@ buildsources:
 	git clone https://github.com/rrpproxy/$(REPOID).wiki.git /tmp/$(REPOID)
 	# Copy files (archive contents)
 	cp -a modules/registrars/keysystems $(FOLDER)/install/modules/registrars
+	cp -a resources/domains $(FOLDER)/install/resources
 	cp README.md HISTORY.md CONTRIBUTING.md LICENSE /tmp/$(REPOID)/*.md $(FOLDER)/docs
 	# Clean up files
 	rm -rf $(FOLDER)/docs/_*.md $(FOLDER)/docs/Home.md /tmp/$(REPOID)

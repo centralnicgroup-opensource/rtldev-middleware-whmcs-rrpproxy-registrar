@@ -123,13 +123,11 @@ function keysystems_getConfigArray($params)
         'Username' => [
             'Type' => 'text',
             'Size' => '25',
-            'Default' => '1024',
             'Description' => 'Enter your RRPproxy Username',
         ],
         'Password' => [
             'Type' => 'password',
             'Size' => '25',
-            'Default' => '',
             'Description' => 'Enter your RRPproxy Password',
         ],
         'DefaultTTL' => [
@@ -139,16 +137,29 @@ function keysystems_getConfigArray($params)
             'Default' => '28800',
             'Description' => 'Default TTL value in seconds for DNS records'
         ],
-        'DNSSEC' => [
-            'FriendlyName' => 'Allow DNSSEC',
-            'Type' => 'yesno',
-            'Description' => 'Enables DNSSEC configuration in the client area'
+        "TransferLock" => [
+            "FriendlyName" => "Automatic Transfer Lock",
+            "Type" => "yesno",
+            "Default" => true,
+            "Description" => "Automatically locks a Domain after Registration or Transfer"
+        ],
+        "NSUpdTransfer" => [
+            "FriendlyName" => "Automatic NS Update on Transfer",
+            "Type" => "yesno",
+            "Default" => true,
+            "Description" => "Automatically update the domain's nameservers after successful transfer to the ones submitted with the order.<br/>NOTE: By default WHMCS suggests your configured Defaultnameservers in the configuration step of the shopping cart."
         ],
         'DeleteMode' => [
             'FriendlyName' => 'Domain deletion mode',
             'Type' => 'dropdown',
             'Options' => ['ImmediateIfPossible', 'AutoDeleteOnExpiry'],
             'Default' => 'ImmediateIfPossible',
+        ],
+        'DNSSEC' => [
+            'FriendlyName' => 'Allow DNSSEC',
+            'Type' => 'yesno',
+            "Default" => false,
+            'Description' => 'Enables DNSSEC configuration in the client area'
         ],
         'TestMode' => [
             'Type' => 'yesno',
@@ -157,7 +168,6 @@ function keysystems_getConfigArray($params)
         'TestPassword' => [
             'Type' => 'password',
             'Size' => '25',
-            'Default' => '',
             'Description' => 'Enter your RRPproxy OT&amp;E Password',
         ]
     ];
@@ -313,7 +323,7 @@ function keysystems_RegisterDomain($params)
     $fields = [
         'domain' => $params['domainname'],
         'period' => $params['regperiod'],
-        'transferlock' => 1,
+        'transferlock' => ($params["TransferLock"] == "on") ? 1 : 0,
         'ownercontact0' => $contact_id,
         'admincontact0' => $admin_contact_id,
         'techcontact0' => $admin_contact_id,
@@ -1250,7 +1260,7 @@ function keysystems_Sync($params)
  */
 function keysystems_TransferSync($params)
 {
-    $values = [];
+    $values = ['completed' => false, 'failed' => false];
     $api = new RRPProxyClient();
     $domain = $params['sld'] . '.' . $params['tld'];
 
@@ -1286,23 +1296,28 @@ function keysystems_TransferSync($params)
             $values['nextinvoicedate'] = $values['expirydate'];
         }
 
-        // Enable transfer lock and set Admin/Billing/Tech contacts if needed
-        $args = ['transferlock' => 1];
+        // Set transferlock
+        if ($params["TransferLock"] == "on") {
+            $args = ['transferlock' => 1];
+        }
 
-        // Get order
-        $order = DB::table('tblorders as o')
-            ->join('tbldomains as d', 'd.orderid', 'o.id')
-            ->where('d.domain', $domain)
-            ->select('o.userid', 'o.contactid', 'o.nameservers')
-            ->orderBy('id', 'DESC')
-            ->first();
+        // Set nameservers
+        if ($params["NSUpdTransfer"] == "on") {
+            // Get order
+            $order = DB::table('tblorders as o')
+                ->join('tbldomains as d', 'd.orderid', 'o.id')
+                ->where('d.domain', $domain)
+                ->select('o.userid', 'o.contactid', 'o.nameservers')
+                ->orderBy('id', 'DESC')
+                ->first();
 
-        // Set nameservers if defined in order
-        if ($order->nameservers) {
-            $nameservers = explode(',', $order->nameservers);
-            $i = 0;
-            foreach ($nameservers as $nameserver) {
-                $args['ownercontact' . $i++] = $nameserver;
+            // Set nameservers if defined in order
+            if ($order->nameservers) {
+                $nameservers = explode(',', $order->nameservers);
+                $i = 0;
+                foreach ($nameservers as $nameserver) {
+                    $args['nameserver' . $i++] = $nameserver;
+                }
             }
         }
 

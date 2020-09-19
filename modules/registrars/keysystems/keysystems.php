@@ -626,21 +626,31 @@ function keysystems_CheckAvailability($params)
         $tldsToInclude = $params['tldsToInclude'];
         $results = new ResultsList();
 
-        foreach ($tldsToInclude as $tld) {
-            $result = $api->call('CheckDomain', ['domain' => $searchTerm . $tld]);
-            $searchResult = new SearchResult($searchTerm, $tld);
-            switch ($result['code']) {
-                case 210:
-                    $status = SearchResult::STATUS_NOT_REGISTERED;
-                    break;
-                case 211:
-                    $status = SearchResult::STATUS_REGISTERED;
-                    break;
-                default:
-                    $status = SearchResult::STATUS_TLD_NOT_SUPPORTED;
+        foreach (array_chunk($tldsToInclude, 32) as $tlds) {
+            $domains = [];
+            $searchResults = [];
+            $i = 0;
+            foreach ($tlds as $tld) {
+                $domains['domain'.$i] = $searchTerm . $tld;
+                $searchResults[$i] = new SearchResult($searchTerm, $tld);;
+                $i++;
             }
-            $searchResult->setStatus($status);
-            $results->append($searchResult);
+            $result = $api->call('CheckDomains', $domains);
+            $i = 0;
+            foreach ($searchResults as $searchResult) {
+                switch (substr($result['property']['domaincheck'][$i++], 0, 3)) {
+                    case 210:
+                        $status = SearchResult::STATUS_NOT_REGISTERED;
+                        break;
+                    case 211:
+                        $status = SearchResult::STATUS_REGISTERED;
+                        break;
+                    default:
+                        $status = SearchResult::STATUS_TLD_NOT_SUPPORTED;
+                }
+                $searchResult->setStatus($status);
+                $results->append($searchResult);
+            }
         }
         return $results;
     } catch (Exception $e) {

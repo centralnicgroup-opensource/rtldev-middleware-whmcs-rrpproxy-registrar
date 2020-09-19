@@ -631,8 +631,8 @@ function keysystems_CheckAvailability($params)
             $searchResults = [];
             $i = 0;
             foreach ($tlds as $tld) {
-                $domains['domain'.$i] = $searchTerm . $tld;
-                $searchResults[$i] = new SearchResult($searchTerm, $tld);;
+                $domains['domain' . $i] = $searchTerm . $tld;
+                $searchResults[$i] = new SearchResult($searchTerm, $tld);
                 $i++;
             }
             $result = $api->call('CheckDomains', $domains);

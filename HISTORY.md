@@ -1,3 +1,11 @@
+# [0.4.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.4...v0.4.0) (2020-09-21)
+
+
+### Features
+
+* **migration:** also migrate old config ([d7ed854](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d7ed85427a4fef939ea94ebffcaccc98808d7430))
+* **reg-transfer:** automatic transfer lock and nameserver configuration is now configurable ([0d95241](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/0d952412d1088a74be768b4a6d586d104dd193df))
+
 ## [0.3.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.3...v0.3.4) (2020-09-21)
 
 

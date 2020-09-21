@@ -1,3 +1,10 @@
+## [0.3.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.3...v0.3.4) (2020-09-21)
+
+
+### Performance Improvements
+
+* **check-availability:** chunk tlds to reduce api calls and improve performance ([457896f](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/457896f5aefba810ed690c88e956d56046a02a7b))
+
 ## [0.3.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.2...v0.3.3) (2020-09-18)
 
 

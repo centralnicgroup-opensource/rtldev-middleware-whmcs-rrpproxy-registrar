@@ -67,6 +67,12 @@ Please read and follow our [Contribution Guidelines](https://github.com/rrpproxy
 * **Kai Schwarz** - *development* - [PapaKai](https://github.com/papakai)
 * **Sebastian Vassiliou** - *development* - [h9k](https://github.com/h9k)
 
+Thanks so much for your great work and having spent all your work time and joy an that module to make it that good - goes to:
+
+* **Zoltan Egresi** - *initial work* - [egresi](https://github.com/egresi)
+
+Thanks for handing it over to us!
+
 See also the list of [contributors](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/graphs/contributors) who participated in this project.
 
 ## License ##

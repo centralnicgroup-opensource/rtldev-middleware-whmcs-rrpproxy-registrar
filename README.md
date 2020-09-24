@@ -1,11 +1,11 @@
-# WHMCS RRPproxy Registrar Module #
+# WHMCS RRPProxy Registrar Module #
 
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![Build Status](https://travis-ci.com/rrpproxy/whmcs-rrpproxy-registrar.svg?branch=master)](https://travis-ci.com/rrpproxy/whmcs-rrpproxy-registrar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/blob/master/CONTRIBUTING.md)
 
-This Repository covers the updated WHMCS Registrar Module of RRPproxy. Source code and latest package version are stable. Just the documentation is to be seen as WIP.
+This Repository covers the updated WHMCS Registrar Module of RRPProxy. Source code and latest package version are stable. Just the documentation is to be seen as WIP.
 
 ## Supported Features ##
 
@@ -49,7 +49,7 @@ E.g.
 
 ## Usage Guide ##
 
-Go to your WHMCS Admin Area -> `Setup > Products/Services > Domain Registrars` and activate the Key-Systems RRPproxy Registrar module by clicking the Activate button and enter your RRPproxy credentials (username/password).
+Go to your WHMCS Admin Area -> `Setup > Products/Services > Domain Registrars` and activate the Key-Systems RRPProxy Registrar module by clicking the Activate button and enter your RRPProxy credentials (username/password).
 
 ## Minimum Requirements ##
 
@@ -79,4 +79,4 @@ See also the list of [contributors](https://github.com/rrpproxy/whmcs-rrpproxy-r
 
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/blob/master/LICENSE) file for details.
 
-[RRPproxy / Key-Systems GmbH](https://www.rrpproxy.net/)
+[RRPProxy / Key-Systems GmbH](https://www.rrpproxy.net/)

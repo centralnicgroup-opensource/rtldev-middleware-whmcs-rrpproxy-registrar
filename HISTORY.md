@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.0...v0.4.1) (2020-10-05)
+
+
+### Bug Fixes
+
+* **transfersync:** fix contact query missing email ([9dfb9c0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/9dfb9c08cf5a5891e42d68a5d666fb24c55c77d4))
+
 # [0.4.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.3.4...v0.4.0) (2020-09-21)
 
 

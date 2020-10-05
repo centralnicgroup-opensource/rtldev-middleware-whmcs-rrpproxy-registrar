@@ -1326,7 +1326,7 @@ function keysystems_TransferSync($params)
         if (!$owner_id) {
             $contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
                 ->where('id', $order->contactid ? $order->contactid : $order->userid)
-                ->select('firstname', 'lastname', 'address1', 'city', 'state', 'country', 'postcode', 'phonenumber', 'companyname')
+                ->select('firstname', 'lastname', 'address1', 'city', 'state', 'country', 'postcode', 'phonenumber', 'email', 'companyname')
                 ->first();
 
             if ($contact) {

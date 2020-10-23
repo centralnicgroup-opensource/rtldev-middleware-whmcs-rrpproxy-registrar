@@ -219,13 +219,11 @@ class RRPProxyClient
                 $params['dnszone'] = ($dnszoneIDN ? $dnszoneIDN : $params['dnszone']);
             }
         }
-        
         $url = $this->api_url;
         $params['command'] = $command;
         foreach ($params as $key => $val) {
             $url .= '&' . rawurlencode($key) . '=' . rawurlencode($val);
         }
-        
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_TIMEOUT         => 20,

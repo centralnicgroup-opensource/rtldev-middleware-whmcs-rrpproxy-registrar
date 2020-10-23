@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.1...v0.4.2) (2020-10-23)
+
+
+### Bug Fixes
+
+* **renewdomain:** remove logic that could lower the renewal years ([d9718c0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d9718c0a11b05b0a50d9c32438a22fa534de94eb)), closes [#25](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/25)
+
 ## [0.4.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.0...v0.4.1) (2020-10-05)
 
 

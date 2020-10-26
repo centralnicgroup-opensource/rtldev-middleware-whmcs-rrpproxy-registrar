@@ -102,9 +102,7 @@ class RRPProxyClient
             'firstname' => $contactDetails['First Name'],
             'lastname' => $contactDetails['Last Name'],
             'organization' => $contactDetails['Organisation Name'], //Company Name
-            'street' => $contactDetails['Address 1'],
-            //'street0' => $contactDetails['Address'],
-            //'street1' => $contactDetails['Address 2'],
+            'street' => $contactDetails['Address'],
             'city' => $contactDetails['City'],
             'state' => $contactDetails['State'],
             'country' => $contactDetails['Country'],

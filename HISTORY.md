@@ -1,3 +1,10 @@
+## [0.4.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.2...v0.4.3) (2020-10-26)
+
+
+### Bug Fixes
+
+* **udpatecontact:** invalid array key for contact street field ([90ce94f](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/90ce94fb9d099e565308aa55e1d225d95f8f694f))
+
 ## [0.4.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.1...v0.4.2) (2020-10-23)
 
 

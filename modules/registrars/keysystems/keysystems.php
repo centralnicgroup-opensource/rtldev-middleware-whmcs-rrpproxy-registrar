@@ -149,6 +149,12 @@ function keysystems_getConfigArray($params)
             "Default" => true,
             "Description" => "Automatically update the domain's nameservers after successful transfer to the ones submitted with the order.<br/>NOTE: By default WHMCS suggests your configured Defaultnameservers in the configuration step of the shopping cart."
         ],
+        'RenewMode' => [
+            'FriendlyName' => 'Domain renewal mode',
+            'Type' => 'dropdown',
+            'Options' => ['ImmediateIfPossible', 'AutoRenewOnce'],
+            'Default' => 'ImmediateIfPossible',
+        ],
         'DeleteMode' => [
             'FriendlyName' => 'Domain deletion mode',
             'Type' => 'dropdown',
@@ -405,7 +411,7 @@ function keysystems_RenewDomain($params)
     try {
         $domain = WHMCS\Domain\Domain::find($params['domainid']);
         $zoneInfo = $api->getZoneInfo($params["domainObj"]->getLastTLDSegment());
-        if (!$zoneInfo->supports_renewals) {
+        if (!$zoneInfo->supports_renewals || ($params['RenewMode'] == 'AutoRenewOnce' && $params["regperiod"] == 1)) {
             $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
         } else {
             $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);

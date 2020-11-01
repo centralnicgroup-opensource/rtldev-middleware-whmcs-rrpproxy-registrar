@@ -1,13 +1,22 @@
 <?php
 
+// .eu
+$additionaldomainfields['.eu'][] = [
+    'Name' => 'X-EU-REGISTRANT-CITIZENSHIP',
+    'DisplayName' => 'Mandatory for European citizens living outside the EU',
+    'Type' => 'text',
+    'Size' => '20',
+    'Required' => false
+];
+
 //.br
-$additionaldomainfields['.com.br'][] = array(
+$additionaldomainfields['.com.br'][] = [
     'Name' => 'X-BR-REGISTER-NUMBER',
     'DisplayName' => 'Tax Identification Number (CPF or CNPJ) <sup style="cursor:help;" title="The CPF is the financial identity number provided by the Brazilian Government for every Brazilian citizen in order to charge taxes and financial matters. The CNPJ is the same as the CPF but it works for companies.">what\'s this?</sup>',
     'Type' => 'text',
     'Size' => '20',
     'Required' => true
-);
+];
 $additionaldomainfields['.abc.br'] = $additionaldomainfields['.com.br'];
 $additionaldomainfields['.belem.br'] = $additionaldomainfields['.com.br'];
 $additionaldomainfields['.blog.br'] = $additionaldomainfields['.com.br'];

@@ -101,7 +101,7 @@ class RRPProxyClient
             //'validation' => true,
             'firstname' => $contactDetails['First Name'],
             'lastname' => $contactDetails['Last Name'],
-            'organization' => $contactDetails['Organisation Name'], //Company Name
+            'organization' => $contactDetails['Company Name'],
             'street' => $contactDetails['Address'],
             'city' => $contactDetails['City'],
             'state' => $contactDetails['State'],

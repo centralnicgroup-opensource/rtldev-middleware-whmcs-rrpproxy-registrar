@@ -1,3 +1,11 @@
+## [0.4.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.3...v0.4.4) (2020-11-01)
+
+
+### Bug Fixes
+
+* **tld-eu:** remove X-ACCEPT-QUARANTINE and add X-EU-REGISTRANT-CITIZENSHIP parameter ([35fd055](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/35fd0553bdbd09fc7505c5af5051d677c654a650))
+* **updatecontact:** invalid array key for contact company field ([ea96252](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/ea962522a2e6eac9f40d086b073271eed486e9ce))
+
 ## [0.4.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.2...v0.4.3) (2020-10-26)
 
 

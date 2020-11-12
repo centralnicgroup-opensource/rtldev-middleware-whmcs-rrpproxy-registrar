@@ -1291,7 +1291,7 @@ function keysystems_TransferSync($params)
                 ->join('tbldomains as d', 'd.orderid', '=', 'o.id')
                 ->where('d.domain', $domain)
                 ->select('o.userid', 'o.contactid', 'o.nameservers')
-                ->orderBy('id', 'DESC')
+                ->orderBy('o.id', 'DESC')
                 ->first();
 
             // Set nameservers if defined in order

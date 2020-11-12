@@ -1288,7 +1288,7 @@ function keysystems_TransferSync($params)
         if ($params["NSUpdTransfer"] == "on") {
             // Get order
             $order = DB::table('tblorders as o')
-                ->join('tbldomains as d', 'd.orderid', 'o.id')
+                ->join('tbldomains as d', 'd.orderid', '=', 'o.id')
                 ->where('d.domain', $domain)
                 ->select('o.userid', 'o.contactid', 'o.nameservers')
                 ->orderBy('id', 'DESC')

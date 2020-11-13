@@ -1,3 +1,11 @@
+## [0.4.5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.4...v0.4.5) (2020-11-13)
+
+
+### Bug Fixes
+
+* **transfer:** order clause ambiguous field clarify ([3f16b25](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/3f16b25471a5a78046af4b7da97daaedf417b644))
+* **transfer:** wrong join syntax cause cron crash ([0c769f4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/0c769f4a91a18f9858437cf54d0dfe6a48dfc1c2))
+
 ## [0.4.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.3...v0.4.4) (2020-11-01)
 
 

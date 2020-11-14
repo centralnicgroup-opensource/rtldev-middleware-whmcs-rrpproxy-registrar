@@ -1,3 +1,10 @@
+## [0.4.6](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.5...v0.4.6) (2020-11-14)
+
+
+### Performance Improvements
+
+* **config:** reduce strain on db in domain list page ([47fc247](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/47fc24766e35231c6438f357fa97c9d53e95c5bc))
+
 ## [0.4.5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.4...v0.4.5) (2020-11-13)
 
 

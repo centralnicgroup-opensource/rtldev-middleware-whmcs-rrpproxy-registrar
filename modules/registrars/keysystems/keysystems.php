@@ -41,31 +41,36 @@ function keysystems_getConfigArray($params)
     $msgMigrate = '';
     $msgRegister = "Don't have a RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>";
 
-    if (isset($params['Username'])) {
-        if (DB::schema()->hasTable('mod_rrpproxy_zones') && !DB::schema()->hasColumn('mod_rrpproxy_zones', 'supports_renewals')) {
-            DB::schema()->drop('mod_rrpproxy_zones');
-        }
+    static $dbChecked = false;
 
-        if (!DB::schema()->hasTable('mod_rrpproxy_zones')) {
-            DB::schema()->create('mod_rrpproxy_zones', function (Blueprint $table) {
-                $table->bigIncrements('id');
-                $table->string('zone', 45);
-                $table->string('periods', 50);
-                $table->integer('grace_days')->nullable();
-                $table->integer('redemption_days')->nullable();
-                $table->boolean('epp_required');
-                $table->boolean('id_protection');
-                $table->boolean('supports_renewals');
-                $table->boolean('renews_on_transfer');
-                $table->boolean('handle_updatable');
-                $table->boolean('needs_trade');
-                $table->timestamps();
-                $table->unique('zone');
-            });
-            $mod_rrpproxy_zones = [];
-            include_once __DIR__ . '/sql/mod_rrpproxy_zones.php';
-            DB::table('mod_rrpproxy_zones')->insert($mod_rrpproxy_zones);
-            DB::table('mod_rrpproxy_zones')->update(['created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+    if (isset($params['Username'])) {
+        if (!$dbChecked) {
+            if (DB::schema()->hasTable('mod_rrpproxy_zones') && !DB::schema()->hasColumn('mod_rrpproxy_zones', 'supports_renewals')) {
+                DB::schema()->drop('mod_rrpproxy_zones');
+            }
+
+            if (!DB::schema()->hasTable('mod_rrpproxy_zones')) {
+                DB::schema()->create('mod_rrpproxy_zones', function (Blueprint $table) {
+                    $table->bigIncrements('id');
+                    $table->string('zone', 45);
+                    $table->string('periods', 50);
+                    $table->integer('grace_days')->nullable();
+                    $table->integer('redemption_days')->nullable();
+                    $table->boolean('epp_required');
+                    $table->boolean('id_protection');
+                    $table->boolean('supports_renewals');
+                    $table->boolean('renews_on_transfer');
+                    $table->boolean('handle_updatable');
+                    $table->boolean('needs_trade');
+                    $table->timestamps();
+                    $table->unique('zone');
+                });
+                $mod_rrpproxy_zones = [];
+                include_once __DIR__ . '/sql/mod_rrpproxy_zones.php';
+                DB::table('mod_rrpproxy_zones')->insert($mod_rrpproxy_zones);
+                DB::table('mod_rrpproxy_zones')->update(['created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+            }
+            $dbChecked = true;
         }
 
         $oldModule = 'rrpproxy';

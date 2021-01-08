@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.6...v0.5.0) (2021-01-08)
+
+
+### Features
+
+* **logo:** update RRPproxy logo ([7176e8e](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/7176e8e08e11914d02087809f349766e302b57d3))
+
 ## [0.4.6](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.5...v0.4.6) (2020-11-14)
 
 

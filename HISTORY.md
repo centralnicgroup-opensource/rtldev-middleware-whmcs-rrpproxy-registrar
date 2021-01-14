@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.0...v0.5.1) (2021-01-14)
+
+
+### Bug Fixes
+
+* **semantic-release:** update packages to fix issue with whmcs marketplace ([444f263](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/444f2639c2bf723e4b17234c618bd89ba87971ad))
+
 # [0.5.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.4.6...v0.5.0) (2021-01-08)
 
 

@@ -39,8 +39,8 @@
     "application"
   ],
   "devDependencies": {
-    "@hexonet/semantic-release-github-whmcs-config": "^1.3.1",
-    "semantic-release": "^17.1.1"
+    "@hexonet/semantic-release-github-whmcs-config": "^1.3.4",
+    "semantic-release": "^17.3.2"
   },
   "scripts": {
     "codeCheck": "phpcs --standard=PSR12 -q -n --colors modules",

@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.1...v0.5.2) (2021-01-28)
+
+
+### Bug Fixes
+
+* **ci:** migration to github actions and gulp (vs. Travis CI and make) ([fa18297](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/fa182970b2d333cf35dd50a9de173521c8a3b30c))
+
 ## [0.5.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.0...v0.5.1) (2021-01-14)
 
 

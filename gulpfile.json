@@ -1,0 +1,23 @@
+{
+    "phpcsparams": "--extensions=php --ignore=node_modules,vendor,templates_c,modules/registrars/ispapi/lib,modules/registrars/ispapi/migration,modules/registrars/ispapi/hooks_migration -q .",
+    "phpcsfixcmd": "phpcbf --standard=PSR12",
+    "phpcschkcmd": "phpcs -n --colors --standard=PSR12",
+    "phpcomptcmd": "phpcs -n --colors --standard=PHPCompatibility --runtime-set testVersion \"$(php -r 'echo PHP_MAJOR_VERSION . \".\" . PHP_MINOR_VERSION;')\"",
+    "phpstancmd": "./vendor/bin/phpstan analyse",
+    "archiveFileName": "whmcs-rrpproxy-registrar",
+    "archiveBuildPath": "build",
+    "filesForArchive": [
+        "README.md",
+        "CONTRIBUTING.md",
+        "HISTORY.md",
+        "LICENSE",
+        "@(modules|resources)/**"
+    ],
+    "filesForCleanup": [
+        "templates_c",
+        "composer.lock",
+        ".phpunit.result.cache",
+        "package-lock.json",
+        "tmp"
+    ]
+}

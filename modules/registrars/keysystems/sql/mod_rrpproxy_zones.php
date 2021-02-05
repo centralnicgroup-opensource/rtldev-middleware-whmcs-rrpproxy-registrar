@@ -1,6 +1,6 @@
 <?php
 
-// Initial import for mod_proxy_zones table
+// Initial import for mod_rrpproxy_zones table
 
 $mod_rrpproxy_zones = array(
     array('id' => '1','zone' => 'ac','periods' => '1y,2y,3y,4y,5y,6y,7y,8y,9y,10y','grace_days' => '35','redemption_days' => '30','epp_required' => '1','id_protection' => '1','supports_renewals' => '1','renews_on_transfer' => '1','handle_updatable' => '1','needs_trade' => '0','created_at' => '2020-09-05 10:10:13','updated_at' => '2020-09-05 10:10:13'),

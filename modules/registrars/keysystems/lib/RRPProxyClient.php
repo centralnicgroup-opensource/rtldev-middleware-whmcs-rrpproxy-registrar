@@ -95,6 +95,57 @@ class RRPProxyClient
         }
     }
 
+    private function mapContact($params, $prefix = '')
+    {
+        $ownerContact = [
+            'firstname' => $params[$prefix . 'firstname'],
+            'lastname' => $params[$prefix . 'lastname'],
+            'email' => $params[$prefix . 'email'],
+            'street0' => $params[$prefix . 'address1'],
+            'street1' => $params[$prefix . 'address2'],
+            'city' => $params[$prefix . 'city'],
+            'state' => $params[$prefix . 'state'],
+            'zip' => $params[$prefix . 'postcode'],
+            'country' => $params[$prefix . 'country'],
+            'phone' => $params[$prefix . 'fullphonenumber'],
+            'new' => 0,
+            'preverify' => 1,
+            'autodelete' => 1
+        ];
+        if ($params[$prefix . 'companyname']) {
+            $ownerContact['organization'] = $params[$prefix . 'companyname'];
+        }
+        return $ownerContact;
+    }
+
+    public function mapOwnerContact($params)
+    {
+        return $this->mapContact($params, '');
+    }
+
+    public function mapAdminContact($params)
+    {
+        return $this->mapContact($params, 'admin');
+    }
+
+    public function getOrCreateContact($contactDetails)
+    {
+        $contact = $this->call('AddContact', $contactDetails);
+        return $contact['property']['contact']['0'];
+    }
+
+    public function getOrCreateOwnerContact($params)
+    {
+        $contactDetails = $this->mapOwnerContact($params);
+        return $this->getOrCreateContact($contactDetails);
+    }
+
+    public function getOrCreateAdminContact($params)
+    {
+        $contactDetails = $this->mapAdminContact($params);
+        return $this->getOrCreateContact($contactDetails);
+    }
+
     public function updateContact($supportsHandleUpdate, $contact_id, $contactDetails)
     {
         $contact = [

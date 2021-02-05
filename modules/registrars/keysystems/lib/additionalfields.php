@@ -1,14 +1,5 @@
 <?php
 
-// .eu
-$additionaldomainfields['.eu'][] = [
-    'Name' => 'X-EU-REGISTRANT-CITIZENSHIP',
-    'DisplayName' => 'Mandatory for European citizens living outside the EU',
-    'Type' => 'text',
-    'Size' => '20',
-    'Required' => false
-];
-
 //.br
 $additionaldomainfields['.com.br'][] = [
     'Name' => 'X-BR-REGISTER-NUMBER',

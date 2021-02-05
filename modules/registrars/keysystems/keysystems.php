@@ -267,52 +267,11 @@ function keysystems_RegisterDomain($params)
         $params['companyname'] = '';
     }
 
-    // Owner Contact Information
-    $ownerContact = [
-        'firstname' => $params["firstname"],
-        'lastname' => $params["lastname"],
-        'email' => $params["email"],
-        'street0' => $params["address1"],
-        'street1' => $params["address2"],
-        'city' => $params["city"],
-        'state' => $params["state"],
-        'zip' => $params["postcode"],
-        'country' => $params["country"],
-        'phone' => $params["fullphonenumber"],
-        'new' => 0,
-        'preverify' => 1,
-        'autodelete' => 1
-    ];
-    if ($params['companyname']) {
-        $ownerContact['organization'] = $params['companyname'];
-    }
-
-    // Admin Contact Information
-    $adminContact = [
-        'firstname' => $params["adminfirstname"],
-        'lastname' => $params["adminlastname"],
-        'email' => $params["adminemail"],
-        'street0' => $params["adminaddress1"],
-        'street1' => $params["adminaddress2"],
-        'city' => $params["admincity"],
-        'state' => $params["adminstate"],
-        'zip' => $params["adminpostcode"],
-        'country' => $params["admincountry"],
-        'phone' => $params["adminfullphonenumber"],
-        'new' => 0,
-        'preverify' => 1
-    ];
-    if ($params['admincompanyname']) {
-        $adminContact['organization'] = $params['admincompanyname'];
-    }
-
     // Create contacts if not existing and get contact handle
     try {
         $api = new RRPProxyClient();
-        $contact = $api->call('AddContact', $ownerContact);
-        $contact_id = $contact['property']['contact']['0'];
-        $contact = $api->call('AddContact', $adminContact);
-        $admin_contact_id = $contact['property']['contact']['0'];
+        $contact_id = $api->getOrCreateOwnerContact($params);
+        $admin_contact_id = $api->getOrCreateAdminContact($params);
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
@@ -380,7 +339,32 @@ function keysystems_TransferDomain($params)
 {
     try {
         $api = new RRPProxyClient();
-        $api->call('TransferDomain', ['domain' => $params['domainname'], 'auth' => $params['eppcode']]);
+        if ($params['tld'] == 'eu') {
+            $contact_id = $api->getOrCreateOwnerContact($params);
+
+            $data = [
+                'domain' => $params['domainname'],
+                'auth' => $params['eppcode'],
+                'action' => 'request',
+                'ownercontact0' => $contact_id
+            ];
+
+            $extensions = [];
+            $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", "eu.php"]);
+            if (file_exists($extensions_path)) {
+                require_once $extensions_path;
+                if (@$extensions['X-EU-REGISTRANT-CITIZENSHIP']) {
+                    $data['X-EU-REGISTRANT-CITIZENSHIP'] = $extensions['X-EU-REGISTRANT-CITIZENSHIP'];
+                }
+            }
+
+            $api->call('TransferDomain', $data);
+        } else {
+            $api->call('TransferDomain', [
+                'domain' => $params['domainname'],
+                'auth' => $params['eppcode']
+            ]);
+        }
         return ['success' => true];
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
@@ -1312,29 +1296,17 @@ function keysystems_TransferSync($params)
         // Set owner contact if missing
         $owner_id = $result['property']['ownercontact'][0];
         if (!$owner_id) {
-            $contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
+            $owner_contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
                 ->where('id', $order->contactid ? $order->contactid : $order->userid)
-                ->select('firstname', 'lastname', 'address1', 'city', 'state', 'country', 'postcode', 'phonenumber', 'email', 'companyname')
+                ->select('firstname', 'lastname', 'address1', 'address2', 'city', 'state', 'country', 'postcode', 'phonenumber AS fullphonenumber', 'email', 'companyname')
                 ->first();
 
-            if ($contact) {
-                $owner_contact = [
-                    'firstname' => $contact->firstname,
-                    'lastname' => $contact->lastname,
-                    'street' => $contact->address1,
-                    'city' => $contact->city,
-                    'state' => $contact->state,
-                    'country' => $contact->country,
-                    'zip' => $contact->postcode,
-                    'phone' => str_replace(' ', '', $contact->phonenumber),
-                    'email' => $contact->email
-                ];
-                if ($contact->companyname) {
-                    $owner_contact['organization'] = $contact->companyname;
+            if ($owner_contact) {
+                if (!is_array($owner_contact)) {
+                    $owner_contact = $owner_contact->toArray();
                 }
                 try {
-                    $contact = $api->call('AddContact', $owner_contact);
-                    $owner_id = $contact['property']['contact'][0];
+                    $owner_id = $api->getOrCreateOwnerContact($owner_contact);
                     $args['ownercontact0'] = $owner_id;
                 } catch (Exception $ex) {
                     $values['error'] = $ex->getMessage();
@@ -1368,8 +1340,7 @@ function keysystems_TransferSync($params)
             }
 
             try {
-                $contact = $api->call('AddContact', $admin_contact);
-                $contact_id = $contact['property']['contact'][0];
+                $contact_id = $api->getOrCreateContact($admin_contact);
                 $args['admincontact0'] = $params['tld'] == 'it' ? $owner_id : $contact_id;
                 $args['billingcontact0'] = $contact_id;
                 $args['techcontact0'] = $contact_id;

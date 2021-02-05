@@ -1,3 +1,10 @@
+## [0.5.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.2...v0.5.3) (2021-02-05)
+
+
+### Bug Fixes
+
+* **transfer:** fix .eu transfer handling ([2fb3fe4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/2fb3fe4e80b34fb77e7c7c8b657d2b18865c5efc)), closes [#38](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/38)
+
 ## [0.5.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.1...v0.5.2) (2021-01-28)
 
 

@@ -7,64 +7,16 @@
 
 This Repository covers the updated WHMCS Registrar Module of RRPproxy. Source code and latest package version are stable. Just the documentation is to be seen as WIP.
 
-## Supported Features ##
-
-* Domain Registration
-  * Additional domain fields (Extensions)
-* Domain Transfer
-* Domain Management
-  * WHOIS Contact Verification (IRTP)
-  * Domain Locking (Transfer Lock)
-  * Update Contact (Owner/Admin) Information
-  * Nameservers Change
-  * Child Nameserver Management (Add, Modify, Delete)
-  * Explicit Deletions in Admin panel
-* Domain Renewal
-* IDNs Support (using idn_to_ascii)
-* TLD Pricing Sync (since WHMCS 7.10)
-* KeyDNS Management
-* DNSSEC Management
-* Web Forwarding
-* Email Forwarding
-* WHOIS Privacy / ID Protection
-* Bulk Update Operations
-* OT&E testing environment
-
-## Unsupported Features ##
-
-* Premium Domains
-
 ## Resources ##
 
+Download the latest package version [here](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/raw/master/whmcs-rrpproxy-registrar-latest.zip).
+
+* [Documentation](https://centralnic-reseller.github.io/centralnic-reseller/docs/rrpproxy/whmcs/whmcs-rrpproxy-registrar/)
 * [Release Notes](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases)
-
-## Installation / Update Guide ##
-
-Simply upload the new version files by FTP or SCP.
-Copy all files from the extracted archive to your WHMCS directory, while keeping the folder structure intact.
-
-E.g.
-
-`modules/registrars/keysystems/ => $YOUR_WHMCS_ROOT/modules/registrars/keysystems/`
-
-## Usage Guide ##
-
-Go to your WHMCS Admin Area -> `Setup > Products/Services > Domain Registrars` and activate the Key-Systems RRPproxy Registrar module by clicking the Activate button and enter your RRPproxy credentials (username/password).
-
-## Minimum Requirements ##
-
-* WHMCS 7.6+ or 8.x
-
-For the latest WHMCS minimum system requirements, please refer to
-[https://docs.whmcs.com/System_Requirements](https://docs.whmcs.com/System_Requirements)
-
-## Contributing ##
-
-Please read and follow our [Contribution Guidelines](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/blob/master/CONTRIBUTING.md).
 
 ## Authors ##
 
-* **Kai Schwarz** - *development* - [PapaKai](https://github.com/papakai)
+* **Kai Schwarz** - *lead development* - [PapaKai](https://github.com/papakai)
 * **Sebastian Vassiliou** - *development* - [h9k](https://github.com/h9k)
 
 Thanks so much for your great work and having spent all your work time and joy an that module to make it that good - goes to:
@@ -72,8 +24,6 @@ Thanks so much for your great work and having spent all your work time and joy a
 * **Zoltan Egresi** - *initial work* - [egresi](https://github.com/egresi)
 
 Thanks for handing it over to us!
-
-See also the list of [contributors](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/graphs/contributors) who participated in this project.
 
 ## License ##
 

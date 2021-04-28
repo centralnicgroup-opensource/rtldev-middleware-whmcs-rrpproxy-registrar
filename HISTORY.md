@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.3...v0.6.0) (2021-04-28)
+
+
+### Features
+
+* **dnssec:** remove SHA-1 options from DNSSEC ([af819f9](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/af819f93bc54805e9b2c180073265166ac1bf855))
+
 ## [0.5.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.2...v0.5.3) (2021-02-05)
 
 

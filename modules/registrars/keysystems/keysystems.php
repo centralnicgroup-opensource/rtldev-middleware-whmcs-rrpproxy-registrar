@@ -1416,11 +1416,6 @@ function keysystems_dnssec($params)
                 257 => 'Key Signing Key'
             ],
             'algOptions' => [
-                3 => 'DSA/SHA-1',
-                4 => 'Elliptic Curve',
-                5 => 'RSA/SHA-1',
-                6 => 'DSA-NSEC3-SHA1',
-                7 => 'RSASHA1-NSEC3-SHA1',
                 8 => 'RSA/SHA256',
                 10 => 'RSA/SHA512',
                 12 => 'GOST R 34.10-2001',
@@ -1430,7 +1425,6 @@ function keysystems_dnssec($params)
                 16 => 'Ed448'
             ],
             'digestOptions' => [
-                1 => 'SHA-1',
                 2 => 'SHA-256',
                 3 => 'GOST R 34.11-94',
                 4 => 'SHA-384'

@@ -198,31 +198,44 @@ function keysystems_GetDomainInformation(array $params)
         $domain->setTransferLock($result['property']['transferlock']['0']);
         $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0']));
 
-        try {
-            //check contact status
-            $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
 
-            $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
-            if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
-                $domain->setDomainContactChangePending(true);
-            }
-        } catch (Exception $ex) {
-            return ['error' => $ex->getMessage()];
+        //check contact status
+        $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
+
+        $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
+        if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
+            $domain->setDomainContactChangePending(true);
         }
 
         if (isset($result['property']['x-time-to-suspension'][0])) {
             $domain->setPendingSuspension(true);
             $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s', $result['property']['x-time-to-suspension'][0]));
         }
-        $domain->setIrtpVerificationTriggerFields(
-            [
-                'Registrant' => [
-                    'First Name',
-                    'Last Name',
-                    'Organization Name',
-                    'Email',
-                ],
+        $domain->setIrtpVerificationTriggerFields([
+            'Registrant' => [
+                'First Name',
+                'Last Name',
+                'Organization Name',
+                'Email',
             ]
+        ]);
+        // -- addons
+        // email forwardings
+        $forwardings = keysystems_GetEmailForwarding($params);
+        $domain->setEmailForwardingStatus(
+            !isset($forwardings["error"])
+            && !empty($forwardings)
+        );
+        // dns management
+        $response = $api->call('CheckDNSZone', [
+            'dnszone' => $params['domainname']
+        ]);
+        $domain->setDnsManagementStatus($response['code'] != 210);
+
+        // id protection
+        $domain->setIdProtectionStatus(
+            isset($result['property']["x-whois-privacy"][0])
+            && $result['property']["x-whois-privacy"][0] > 0
         );
 
         return $domain;

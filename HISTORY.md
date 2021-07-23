@@ -1,3 +1,10 @@
+## [0.7.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.0...v0.7.1) (2021-07-23)
+
+
+### Bug Fixes
+
+* **.ro additional fields:** make CNPFiscalCode mandatory ([1480c88](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/1480c882d9711f1bbc274d0c18b37b1dc8218eaa))
+
 # [0.7.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.6.0...v0.7.0) (2021-07-23)
 
 

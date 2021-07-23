@@ -27,3 +27,22 @@ $additionaldomainfields['.sjc.br'] = $additionaldomainfields['.com.br'];
 $additionaldomainfields['.tur.br'] = $additionaldomainfields['.com.br'];
 $additionaldomainfields['.tv.br'] = $additionaldomainfields['.com.br'];
 $additionaldomainfields['.vix.br'] = $additionaldomainfields['.com.br'];
+
+//.ro
+$additionaldomainfields['.ro'][] = [
+    'Name' => 'CNPFiscalCode',
+    'Required' => true
+];
+$additionaldomainfields['.arts.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.co.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.com.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.firm.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.info.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.nom.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.nt.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.org.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.rec.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.ro.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.store.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.tm.ro'] = $additionaldomainfields['.ro'];
+$additionaldomainfields['.www.ro'] = $additionaldomainfields['.ro'];

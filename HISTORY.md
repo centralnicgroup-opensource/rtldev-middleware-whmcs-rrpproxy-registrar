@@ -1,3 +1,15 @@
+# [0.7.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.6.0...v0.7.0) (2021-07-23)
+
+
+### Bug Fixes
+
+* **getdomaininformation:** improve handling of CheckDNSZone ([ca60494](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/ca60494ed2a561afeb28ff4186da29bd7450b64a))
+
+
+### Features
+
+* **getdomaininformation:** extended to also return addon status ([3603b96](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/3603b96227fc6a577d109c306172cd7bb6a6f3fd))
+
 # [0.6.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.5.3...v0.6.0) (2021-04-28)
 
 

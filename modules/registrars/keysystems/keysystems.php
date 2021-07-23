@@ -227,9 +227,13 @@ function keysystems_GetDomainInformation(array $params)
             && !empty($forwardings)
         );
         // dns management
-        $response = $api->call('CheckDNSZone', [
-            'dnszone' => $params['domainname']
-        ]);
+        try {
+            $response = $api->call('CheckDNSZone', [
+                'dnszone' => $params['domainname']
+            ]);
+        } catch (Exception $ex) {
+            $response['code'] = 0;
+        }
         $domain->setDnsManagementStatus($response['code'] != 210);
 
         // id protection

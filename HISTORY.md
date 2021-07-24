@@ -1,3 +1,10 @@
+## [0.7.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.1...v0.7.2) (2021-07-24)
+
+
+### Bug Fixes
+
+* **transfer:** use forcerequest parameter to automatically switch to usertransfer if needed ([f31fc51](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/f31fc51b9abe84bc006545c3fddcecefadc5419f)), closes [#44](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/44)
+
 ## [0.7.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.0...v0.7.1) (2021-07-23)
 
 

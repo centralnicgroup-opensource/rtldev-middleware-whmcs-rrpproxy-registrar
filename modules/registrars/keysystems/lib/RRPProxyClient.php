@@ -28,15 +28,16 @@ class RRPProxyClient
 
     protected $params;
 
-    public function __construct()
+    public function __construct($params)
     {
-        $registrar = DB::table('tblregistrars')->where('registrar', 'keysystems')->get();
-        if (empty($registrar)) {
-            throw \Exception('Registrar data not found');
-        }
-        $params = [];
-        foreach ($registrar as $data) {
-            $params[$data->setting] = self::decrypt($data->value);
+        if (!isset($params['Username'])) {
+            $registrar = DB::table('tblregistrars')->where('registrar', 'keysystems')->get();
+            if (empty($registrar)) {
+                throw \Exception('Registrar data not found');
+            }
+            foreach ($registrar as $data) {
+                $params[$data->setting] = self::decrypt($data->value);
+            }
         }
         if ($params['TestMode']) {
             $this->api_url = 'https://api-ote.rrpproxy.net/api/call?s_opmode=OTE&s_login=' . rawurlencode($params['Username']) . '&s_pw=' . rawurlencode($params['TestPassword']);

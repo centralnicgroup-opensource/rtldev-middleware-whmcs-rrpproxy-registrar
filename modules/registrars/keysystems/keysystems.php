@@ -181,7 +181,7 @@ function keysystems_getConfigArray($params)
 function keysystems_GetDomainInformation(array $params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
 
         $nameservers = [];
@@ -252,7 +252,7 @@ function keysystems_ResendIRTPVerificationEmail(array $params)
 {
     $domain = keysystems_GetDomainInformation($params);
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string)$domain->getRegistrantEmailAddress()]);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -286,7 +286,7 @@ function keysystems_RegisterDomain($params)
 
     // Create contacts if not existing and get contact handle
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $contact_id = $api->getOrCreateOwnerContact($params);
         $admin_contact_id = $api->getOrCreateAdminContact($params);
     } catch (Exception $e) {
@@ -328,7 +328,7 @@ function keysystems_RegisterDomain($params)
 
     //Register the domain name
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call($domainApplication ? 'AddDomainApplication' : 'AddDomain', $request);
         return ['success' => true];
     } catch (Exception $e) {
@@ -355,7 +355,7 @@ function keysystems_RegisterDomain($params)
 function keysystems_TransferDomain($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         if ($params['tld'] == 'eu') {
             $contact_id = $api->getOrCreateOwnerContact($params);
 
@@ -408,7 +408,7 @@ function keysystems_TransferDomain($params)
  */
 function keysystems_RenewDomain($params)
 {
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
 
     try {
         $domain = WHMCS\Domain\Domain::find($params['domainid']);
@@ -438,7 +438,7 @@ function keysystems_RenewDomain($params)
 function keysystems_GetNameservers($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
 
         $values = [
@@ -484,7 +484,7 @@ function keysystems_SaveNameservers($params)
     ];
 
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('ModifyDomain', $fields);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -507,7 +507,7 @@ function keysystems_SaveNameservers($params)
 function keysystems_GetContactDetails($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
 
         $owner_id = $response["property"]["ownercontact"][0];
@@ -555,7 +555,7 @@ function keysystems_SaveContactDetails($params)
     $args = [];
 
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $response = $api->call('StatusDomain', ['domain' => $domain]);
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -634,7 +634,7 @@ function keysystems_CheckAvailability($params)
 {
     // TODO need to implement PREMIUM DOMAINS
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
 
         if ($params['isIdnDomain'] && !empty($params['punyCodeSearchTerm'])) {
             $searchTerm = strtolower($params['punyCodeSearchTerm']);
@@ -696,7 +696,7 @@ function keysystems_GetDomainSuggestions($params)
 {
     // TODO need to implement PREMIUM DOMAINS
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $response = $api->call('GetNameSuggestion', ['name' => $params['searchTerm'], 'show-unavailable' => 0]);
         $results = new ResultsList();
         foreach ($response['property']['name'] as $key => $domain) {
@@ -727,7 +727,7 @@ function keysystems_GetDomainSuggestions($params)
 function keysystems_GetRegistrarLock($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
         if ($result['property']['transferlock'][0] == 0) {
             return "unlocked";
@@ -751,7 +751,7 @@ function keysystems_GetRegistrarLock($params)
 function keysystems_SaveRegistrarLock($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('ModifyDomain', ['domain' => $params['domainname'], 'transferlock' => ($params['lockenabled'] == 'locked') ? 1 : 0]);
         return ['success' => 'success'];
     } catch (Exception $ex) {
@@ -772,7 +772,7 @@ function keysystems_GetDNS($params)
 {
     $values = [];
 
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
 
     try {
         $response = $api->call('CheckDNSZone', ['dnszone' => $params['domainname']]);
@@ -841,7 +841,7 @@ function keysystems_SaveDNS($params)
 {
     $values = [];
     $oldZone = [];
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
 
     try {
         $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'orderby' => "type", 'wide' => 1]);
@@ -930,7 +930,7 @@ function keysystems_SaveDNS($params)
  */
 function keysystems_GetEmailForwarding($params)
 {
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
     try {
         $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
     } catch (Exception $e) {
@@ -954,7 +954,7 @@ function keysystems_GetEmailForwarding($params)
  */
 function keysystems_SaveEmailForwarding($params)
 {
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
     try {
         $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
     } catch (Exception $e) {
@@ -1033,7 +1033,7 @@ function keysystems_SaveEmailForwarding($params)
 function keysystems_IDProtectToggle($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('ModifyDomain', ['domain' => $params['domainname'], 'X-WHOISPRIVACY' => ($params["protectenable"]) ? "1" : "0"]);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -1057,7 +1057,7 @@ function keysystems_IDProtectToggle($params)
 function keysystems_GetEPPCode($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $needSetAuthcode = ['de', 'be', 'no', 'eu'];
         if (in_array($params['tld'], $needSetAuthcode)) {
             try {
@@ -1105,7 +1105,7 @@ function keysystems_ReleaseDomain($params)
     }
 
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('PushDomain', $fields);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -1124,7 +1124,7 @@ function keysystems_ReleaseDomain($params)
  */
 function keysystems_RequestDelete($params)
 {
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
 
     if ($params['DeleteMode'] == 'ImmediateIfPossible') {
         try {
@@ -1157,7 +1157,7 @@ function keysystems_RequestDelete($params)
 function keysystems_RegisterNameserver($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('AddNameserver', ['nameserver' => $params['nameserver'], 'ipaddress0' => $params["ipaddress"]]);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -1179,7 +1179,7 @@ function keysystems_RegisterNameserver($params)
 function keysystems_ModifyNameserver($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('ModifyNameserver', ['nameserver' => $params['nameserver'], 'delipaddress0' => $params["currentipaddress"], 'addipaddress0' => $params["newipaddress"]]);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -1199,7 +1199,7 @@ function keysystems_ModifyNameserver($params)
 function keysystems_DeleteNameserver($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $api->call('DeleteNameserver', ['nameserver' => $params['nameserver']]);
         return ['success' => true];
     } catch (Exception $ex) {
@@ -1223,7 +1223,7 @@ function keysystems_DeleteNameserver($params)
 function keysystems_Sync($params)
 {
     try {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
         $status = strtolower($result['property']['status'][0]);
         //TODO set admin/tech/billing contacts if necessary
@@ -1252,7 +1252,7 @@ function keysystems_Sync($params)
 function keysystems_TransferSync($params)
 {
     $values = ['completed' => false, 'failed' => false];
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
     $domain = $params['sld'] . '.' . $params['tld'];
 
     try {
@@ -1389,7 +1389,7 @@ function keysystems_TransferSync($params)
  */
 function keysystems_dnssec($params)
 {
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
     $error = null;
     $dsData = [];
     $keyData = [];
@@ -1456,14 +1456,14 @@ function keysystems_dnssec($params)
     ];
 }
 
-function keysystems_ConvertPrice($price, $fromCurrency, $toCurrency)
+function keysystems_ConvertPrice($params, $price, $fromCurrency, $toCurrency)
 {
-    return round($price * keysystems_GetCachedExchangeRate($fromCurrency, $toCurrency));
+    return round($price * keysystems_GetCachedExchangeRate($params, $fromCurrency, $toCurrency));
 }
 
 $exchangeRates = [];
 
-function keysystems_GetCachedExchangeRate($from, $to)
+function keysystems_GetCachedExchangeRate($params, $from, $to)
 {
     global $exchangeRates;
 
@@ -1472,7 +1472,7 @@ function keysystems_GetCachedExchangeRate($from, $to)
     }
     $key = "$from-$to";
     if (!isset($exchangeRates[$key])) {
-        $api = new RRPProxyClient();
+        $api = new RRPProxyClient($params);
         try {
             $result = $api->call('QueryExchangeRates', ['currencyfrom' => $from, 'currencyto' => $to, 'limit' => 1]);
         } catch (Exception $ex) {
@@ -1488,7 +1488,7 @@ function keysystems_GetTldPricing(array $params)
     $ignoreZones = ['nameemail', 'nuidn']; // Those are not real TLDs but the API returns then for some reason
 
     $pricelist = [];
-    $api = new RRPProxyClient();
+    $api = new RRPProxyClient($params);
     try {
         $result = $api->call('QueryZoneList');
     } catch (Exception $e) {
@@ -1560,10 +1560,10 @@ function keysystems_GetTldPricing(array $params)
             $redemptionFee = $values['restore_fee'];
         } else {
             $currency = $defaultCurrency;
-            $setupFee = keysystems_ConvertPrice($values['setup_fee'], $values['currency'], $currency);
-            $annualFee = keysystems_ConvertPrice($values['annual_fee'], $values['currency'], $currency);
-            $transferFee = keysystems_ConvertPrice($values['transfer_fee'], $values['currency'], $currency);
-            $redemptionFee = keysystems_ConvertPrice($values['restore_fee'], $values['currency'], $currency);
+            $setupFee = keysystems_ConvertPrice($params, $values['setup_fee'], $values['currency'], $currency);
+            $annualFee = keysystems_ConvertPrice($params, $values['annual_fee'], $values['currency'], $currency);
+            $transferFee = keysystems_ConvertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
+            $redemptionFee = keysystems_ConvertPrice($params, $values['restore_fee'], $values['currency'], $currency);
         }
 
         // Workaround for stupid WHMCS logic as of 7.10 RC2

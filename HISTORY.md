@@ -1,3 +1,10 @@
+## [0.7.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.2...v0.7.3) (2021-07-24)
+
+
+### Bug Fixes
+
+* **log:** wrong parameter names in logModuleCall ([e8de9b8](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/e8de9b85a4ad6bf290819a65b8af5456860ad52e)), closes [#42](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/42)
+
 ## [0.7.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.1...v0.7.2) (2021-07-24)
 
 

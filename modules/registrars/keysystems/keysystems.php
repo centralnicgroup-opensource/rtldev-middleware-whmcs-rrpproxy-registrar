@@ -31,7 +31,7 @@ use WHMCS\Domains\DomainLookup\SearchResult;
 use WHMCS\Domain\TopLevel\ImportItem;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
-define("RRPPROXY_VERSION", "0.7.1");
+define("RRPPROXY_VERSION", "0.7.2");
 
 require_once __DIR__ . '/lib/RRPProxyClient.php';
 
@@ -363,7 +363,8 @@ function keysystems_TransferDomain($params)
                 'domain' => $params['domainname'],
                 'auth' => $params['eppcode'],
                 'action' => 'request',
-                'ownercontact0' => $contact_id
+                'ownercontact0' => $contact_id,
+                'FORCEREQUEST' => 1
             ];
 
             $extensions = [];
@@ -379,7 +380,8 @@ function keysystems_TransferDomain($params)
         } else {
             $api->call('TransferDomain', [
                 'domain' => $params['domainname'],
-                'auth' => $params['eppcode']
+                'auth' => $params['eppcode'],
+                'FORCEREQUEST' => 1
             ]);
         }
         return ['success' => true];

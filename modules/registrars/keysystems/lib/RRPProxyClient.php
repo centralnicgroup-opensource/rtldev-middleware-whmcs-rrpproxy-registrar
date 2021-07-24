@@ -295,7 +295,7 @@ class RRPProxyClient
         curl_close($ch);
 
         $results = $this->processResponse($response);
-        logModuleCall('keysystems', $command, $params, $response, $results, array($params['username'], $params['password']));
+        logModuleCall('keysystems', $command, $params, $response, $results, array($params['Username'], $params['Password']));
 
 
         if ((preg_match('/^2/', $results['code']))) { //Successful Return Codes (2xx), return the results.

@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.0...v0.8.1) (2021-08-04)
+
+
+### Bug Fixes
+
+* **getdomaininformation:** reviewed returned custom data ([152343d](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/152343d71145cf4196380ef05a4a634ec6fe4134))
+
 # [0.8.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.3...v0.8.0) (2021-08-04)
 
 

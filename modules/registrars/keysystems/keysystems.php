@@ -266,15 +266,6 @@ function keysystems_GetDomainInformation(array $params)
             $isTrusteeUsed = 1;
         }
 
-        //--------------------------------------------------------------------------------
-        //TODO: Fill $data. We have no reverse mapping from API to WHMCS fields yet
-        //      This is then also about reverse mapping API values to WHMCS comaptible ones
-        //--------------------------------------------------------------------------------
-        $data = [];
-        $addflds = new \WHMCS\Domains\AdditionalFields();
-        $addflds->setDomain($params['domainname'])
-                ->setFieldValues($data);
-
         // set custom data
         $domain->registrarData = [
             "isPremium" => (int) (
@@ -282,14 +273,19 @@ function keysystems_GetDomainInformation(array $params)
                 && $result["property"]["x-fee-class"][0] === "premium"
             ),
             "isTrusteeUsed" => $isTrusteeUsed,
-            "createdDate" => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['created_date'][0])->toDateString(),
             "registrantTaxId" => $vatid,
-            "domainfields" => $addflds
+            "createdDate" => $result['property']['createddate'][0]
+            //"domainfields" => ... TODO
         ];
 
         return $domain;
     } catch (Exception $ex) {
-        return ['error' => $ex->getMessage()];
+        // TODO
+        // from what I recognized, it is about letting this method throw an Exception
+        // or returning an instance of \WHMCS\Domain\Registrar\Domain
+        return [
+            'error' => $ex->getMessage()
+        ];
     }
 }
 

@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.3...v0.8.0) (2021-08-04)
+
+
+### Features
+
+* **getdomaininformation:** fixes index access; extended to provide add. data for import purposes ([fd727ff](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/fd727ff5b74b31313cb9b1fb05fc4c1e0e19f2cd))
+
 ## [0.7.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.7.2...v0.7.3) (2021-07-24)
 
 

@@ -31,7 +31,7 @@ use WHMCS\Domains\DomainLookup\SearchResult;
 use WHMCS\Domain\TopLevel\ImportItem;
 use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
 
-define("RRPPROXY_VERSION", "0.7.3");
+define("RRPPROXY_VERSION", "0.8.0");
 
 require_once __DIR__ . '/lib/RRPProxyClient.php';
 

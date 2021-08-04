@@ -180,119 +180,110 @@ function keysystems_getConfigArray($params)
 
 function keysystems_GetDomainInformation(array $params)
 {
-    try {
-        $api = new RRPProxyClient($params);
-        $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+    $api = new RRPProxyClient($params);
+    $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
 
-        $nameservers = [];
-        $i = 1;
-        foreach ($result['property']['nameserver'] as $nameserver) {
-            $nameservers["ns" . $i] = $nameserver;
-            $i++;
-        }
-
-        $domain = new Domain();
-        $domain->setIsIrtpEnabled(true);
-        $domain->setDomain($result['property']['domain'][0]);
-        $domain->setNameservers($nameservers);
-        $domain->setTransferLock($result['property']['transferlock'][0]);
-        $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0]));
-
-        //check contact status
-        $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
-
-        $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
-        if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
-            $domain->setDomainContactChangePending(true);
-        }
-
-        if (isset($result['property']['x-time-to-suspension'][0])) {
-            $domain->setPendingSuspension(true);
-            $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s', $result['property']['x-time-to-suspension'][0]));
-        }
-        $domain->setIrtpVerificationTriggerFields([
-            'Registrant' => [
-                'First Name',
-                'Last Name',
-                'Organization Name',
-                'Email',
-            ]
-        ]);
-        // -- addons
-        // email forwardings
-        $forwardings = keysystems_GetEmailForwarding($params);
-        $domain->setEmailForwardingStatus(
-            !isset($forwardings["error"])
-            && !empty($forwardings)
-        );
-        // dns management
-        try {
-            $response = $api->call('CheckDNSZone', [
-                'dnszone' => $params['domainname']
-            ]);
-        } catch (Exception $ex) {
-            $response['code'] = 0;
-        }
-        $domain->setDnsManagementStatus($response['code'] != 210);
-
-        // id protection
-        $domain->setIdProtectionStatus(
-            isset($result['property']["x-whois-privacy"][0])
-            && $result['property']["x-whois-privacy"][0] > 0
-        );
-
-        // add custom data (for import purposes)
-        // registrant vatid
-        $vatid = "";
-        $keys = array_keys($result['property']);
-        $pnames = preg_grep(
-            "/admin|tech|billing/",
-            preg_grep(
-                "/vatid/",
-                $keys
-            ),
-            PREG_GREP_INVERT
-        );
-        foreach ($pnames as $prop) {
-            if (!empty($result['property'][$prop][0])) {
-                $vatid = $result['property'][$prop][0];
-                break;
-            }
-        }
-        // trustee service detection
-        $isTrusteeUsed = 0;
-        $pnames = preg_grep("/^x-.+-accept-trustee-tac$/i", $keys);
-        if (!empty($pnames)) {
-            $isTrusteeUsed = 1;
-        }
-
-        // set custom data
-        $domain->registrarData = [
-            "isPremium" => (int) (
-                isset($result["property"]["x-fee-class"][0])
-                && $result["property"]["x-fee-class"][0] === "premium"
-            ),
-            "isTrusteeUsed" => $isTrusteeUsed,
-            "registrantTaxId" => $vatid,
-            "createdDate" => $result['property']['createddate'][0]
-            //"domainfields" => ... TODO
-        ];
-
-        return $domain;
-    } catch (Exception $ex) {
-        // TODO
-        // from what I recognized, it is about letting this method throw an Exception
-        // or returning an instance of \WHMCS\Domain\Registrar\Domain
-        return [
-            'error' => $ex->getMessage()
-        ];
+    $nameservers = [];
+    $i = 1;
+    foreach ($result['property']['nameserver'] as $nameserver) {
+        $nameservers["ns" . $i] = $nameserver;
+        $i++;
     }
+
+    $domain = new Domain();
+    $domain->setIsIrtpEnabled(true);
+    $domain->setDomain($result['property']['domain'][0]);
+    $domain->setNameservers($nameservers);
+    $domain->setTransferLock($result['property']['transferlock'][0]);
+    $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0]));
+
+    //check contact status
+    $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
+
+    $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
+    if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
+        $domain->setDomainContactChangePending(true);
+    }
+
+    if (isset($result['property']['x-time-to-suspension'][0])) {
+        $domain->setPendingSuspension(true);
+        $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s', $result['property']['x-time-to-suspension'][0]));
+    }
+    $domain->setIrtpVerificationTriggerFields([
+        'Registrant' => [
+            'First Name',
+            'Last Name',
+            'Organization Name',
+            'Email',
+        ]
+    ]);
+    // -- addons
+    // email forwardings
+    $forwardings = keysystems_GetEmailForwarding($params);
+    $domain->setEmailForwardingStatus(
+        !isset($forwardings["error"])
+        && !empty($forwardings)
+    );
+    // dns management
+    try {
+        $response = $api->call('CheckDNSZone', [
+            'dnszone' => $params['domainname']
+        ]);
+    } catch (Exception $ex) {
+        $response['code'] = 0;
+    }
+    $domain->setDnsManagementStatus($response['code'] != 210);
+
+    // id protection
+    $domain->setIdProtectionStatus(
+        isset($result['property']["x-whois-privacy"][0])
+        && $result['property']["x-whois-privacy"][0] > 0
+    );
+
+    // add custom data (for import purposes)
+    // registrant vatid
+    $vatid = "";
+    $keys = array_keys($result['property']);
+    $pnames = preg_grep(
+        "/admin|tech|billing/",
+        preg_grep(
+            "/vatid/",
+            $keys
+        ),
+        PREG_GREP_INVERT
+    );
+    foreach ($pnames as $prop) {
+        if (!empty($result['property'][$prop][0])) {
+            $vatid = $result['property'][$prop][0];
+            break;
+        }
+    }
+    // trustee service detection
+    $isTrusteeUsed = 0;
+    $pnames = preg_grep("/^x-.+-accept-trustee-tac$/i", $keys);
+    if (!empty($pnames)) {
+        $isTrusteeUsed = 1;
+    }
+
+    // set custom data
+    $domain->registrarData = [
+        "isPremium" => (int) (
+            isset($result["property"]["x-fee-class"][0])
+            && $result["property"]["x-fee-class"][0] === "premium"
+        ),
+        "isTrusteeUsed" => $isTrusteeUsed,
+        "registrantTaxId" => $vatid,
+        "createdDate" => $result['property']['createddate'][0]
+        //"domainfields" => ... TODO
+    ];
+
+    return $domain;
 }
 
 function keysystems_ResendIRTPVerificationEmail(array $params)
 {
-    $domain = keysystems_GetDomainInformation($params);
     try {
+        $domain = keysystems_GetDomainInformation($params);
         $api = new RRPProxyClient($params);
         $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string)$domain->getRegistrantEmailAddress()]);
         return ['success' => true];

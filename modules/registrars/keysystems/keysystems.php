@@ -195,9 +195,8 @@ function keysystems_GetDomainInformation(array $params)
         $domain->setIsIrtpEnabled(true);
         $domain->setDomain($result['property']['domain'][0]);
         $domain->setNameservers($nameservers);
-        $domain->setTransferLock($result['property']['transferlock']['0']);
-        $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0']));
-
+        $domain->setTransferLock($result['property']['transferlock'][0]);
+        $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0]));
 
         //check contact status
         $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
@@ -241,6 +240,52 @@ function keysystems_GetDomainInformation(array $params)
             isset($result['property']["x-whois-privacy"][0])
             && $result['property']["x-whois-privacy"][0] > 0
         );
+
+        // add custom data (for import purposes)
+        // registrant vatid
+        $vatid = "";
+        $keys = array_keys($result['property']);
+        $pnames = preg_grep(
+            "/admin|tech|billing/",
+            preg_grep(
+                "/vatid/",
+                $keys
+            ),
+            PREG_GREP_INVERT
+        );
+        foreach ($pnames as $prop) {
+            if (!empty($result['property'][$prop][0])) {
+                $vatid = $result['property'][$prop][0];
+                break;
+            }
+        }
+        // trustee service detection
+        $isTrusteeUsed = 0;
+        $pnames = preg_grep("/^x-.+-accept-trustee-tac$/i", $keys);
+        if (!empty($pnames)) {
+            $isTrusteeUsed = 1;
+        }
+
+        //--------------------------------------------------------------------------------
+        //TODO: Fill $data. We have no reverse mapping from API to WHMCS fields yet
+        //      This is then also about reverse mapping API values to WHMCS comaptible ones
+        //--------------------------------------------------------------------------------
+        $data = [];
+        $addflds = new \WHMCS\Domains\AdditionalFields();
+        $addflds->setDomain($params['domainname'])
+                ->setFieldValues($data);
+
+        // set custom data
+        $domain->registrarData = [
+            "isPremium" => (int) (
+                isset($result["property"]["x-fee-class"][0])
+                && $result["property"]["x-fee-class"][0] === "premium"
+            ),
+            "isTrusteeUsed" => $isTrusteeUsed,
+            "createdDate" => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['created_date'][0])->toDateString(),
+            "registrantTaxId" => $vatid,
+            "domainfields" => $addflds
+        ];
 
         return $domain;
     } catch (Exception $ex) {
@@ -1230,7 +1275,7 @@ function keysystems_Sync($params)
         return [
             'active' => $status == 'active',
             'expired' => $status == 'expired',
-            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString()
+            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString()
         ];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1279,7 +1324,7 @@ function keysystems_TransferSync($params)
     }
 
     if ($values['completed']) {
-        $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate']['0'])->toDateString();
+        $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString();
 
         $zoneInfo = $api->getZoneInfo($params['tld']);
         if (!$zoneInfo->renews_on_transfer) {

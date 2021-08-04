@@ -1,3 +1,10 @@
+## [0.8.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.2...v0.8.3) (2021-08-04)
+
+
+### Bug Fixes
+
+* **transfer:** fix transfer sync with no contact in WHMCS v7 ([967f8c7](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/967f8c7dad8ee0e8780960f354bcdf6ca73ea581)), closes [#49](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/49)
+
 ## [0.8.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.1...v0.8.2) (2021-08-04)
 
 

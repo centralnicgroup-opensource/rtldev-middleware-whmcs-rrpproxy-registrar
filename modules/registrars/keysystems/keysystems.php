@@ -81,7 +81,7 @@ function keysystems_getConfigArray($params)
                 ->pluck('value', 'setting');
             if ($oldConfig) {
                 // This is needed for WHMCS v8 compatibility
-                if (!is_array($oldConfig)) {
+                if ((int) $params['whmcsVersion'][0] >= 8) {
                     $oldConfig = $oldConfig->toArray();
                 }
                 $oldConfig['TestPassword'] = $oldConfig['Password'];
@@ -1353,7 +1353,7 @@ function keysystems_TransferSync($params)
                 ->first();
 
             if ($owner_contact) {
-                if (!is_array($owner_contact)) {
+                if ((int) $params['whmcsVersion'][0] >= 8) {
                     $owner_contact = $owner_contact->toArray();
                 }
                 try {

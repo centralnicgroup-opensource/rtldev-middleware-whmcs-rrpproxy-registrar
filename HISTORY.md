@@ -1,3 +1,10 @@
+## [0.8.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.1...v0.8.2) (2021-08-04)
+
+
+### Bug Fixes
+
+* **getdomaininformation:** let GetDomainInformation throw exception ([c8fa368](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/c8fa368724ae9c7e440417accf45a90580c0d676)), closes [#51](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/51)
+
 ## [0.8.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.0...v0.8.1) (2021-08-04)
 
 

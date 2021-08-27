@@ -1353,7 +1353,7 @@ function keysystems_TransferSync($params)
                 ->first();
 
             if ($owner_contact) {
-                if ((int) $params['whmcsVersion'][0] >= 8) {
+                if (is_object($owner_contact)) {
                     $owner_contact = $owner_contact->toArray();
                 }
                 try {

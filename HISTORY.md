@@ -1,3 +1,10 @@
+## [0.8.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.3...v0.8.4) (2021-08-27)
+
+
+### Bug Fixes
+
+* **transfer:** fixed issue with stdClass in contact handling in newer WHMCS releases ([deb3a9b](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/deb3a9b031255d8d04a45356c93dcd0b5af8ecdf))
+
 ## [0.8.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.2...v0.8.3) (2021-08-04)
 
 

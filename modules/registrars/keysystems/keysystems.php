@@ -1354,7 +1354,7 @@ function keysystems_TransferSync($params)
 
             if ($owner_contact) {
                 if (is_object($owner_contact)) {
-                    $owner_contact = $owner_contact->toArray();
+                    $owner_contact = get_object_vars($owner_contact);
                 }
                 try {
                     $owner_id = $api->getOrCreateOwnerContact($owner_contact);

@@ -1,3 +1,10 @@
+## [0.8.5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.4...v0.8.5) (2021-08-31)
+
+
+### Bug Fixes
+
+* **transfer:** method toArray not available, fetch object vars ([d531c40](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d531c402e5324e7a7d94794d82474560cb80462f))
+
 ## [0.8.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.3...v0.8.4) (2021-08-27)
 
 

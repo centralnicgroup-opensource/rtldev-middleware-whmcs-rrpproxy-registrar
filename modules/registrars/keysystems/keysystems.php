@@ -4,7 +4,7 @@
  * WHMCS RRPproxy Registrar Module
  *
  * @author Sebastian Vassiliou <svassiliou@hexonet.net>
- * Copyright 2020 Key-Systems GmbH
+ * Copyright 2020-2021 Key-Systems GmbH
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
@@ -808,7 +808,7 @@ function keysystems_GetDNS($params)
 
     try {
         $response = $api->call('CheckDNSZone', ['dnszone' => $params['domainname']]);
-        $zoneExists = ($response['code'] != 210);
+        $zoneExists = ($response['code'] == 210);
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }

@@ -1,3 +1,10 @@
+## [0.8.6](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.5...v0.8.6) (2021-09-17)
+
+
+### Bug Fixes
+
+* **dns-management:** fix dns zone failing to enable in dns management ([22eb4f2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/22eb4f25eece932bc61c1442e6bb2b5c9f6def0e))
+
 ## [0.8.5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.4...v0.8.5) (2021-08-31)
 
 

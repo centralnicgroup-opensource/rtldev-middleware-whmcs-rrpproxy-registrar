@@ -154,6 +154,24 @@ function keysystems_getConfigArray($params)
             "Default" => true,
             "Description" => "Automatically update the domain's nameservers after successful transfer to the ones submitted with the order.<br/>NOTE: By default WHMCS suggests your configured Defaultnameservers in the configuration step of the shopping cart."
         ],
+        "AutoDNSManagement" => [
+            "FriendlyName" => "Enable DNS Management",
+            "Type" => "yesno",
+            "Default" => true,
+            "Description" => "Enable DNS Management on TLD pricing sync"
+        ],
+        "AutoEmailForwarding" => [
+            "FriendlyName" => "Enable Email Forwarding",
+            "Type" => "yesno",
+            "Default" => true,
+            "Description" => "Enable Email Forwarding on TLD pricing sync"
+        ],
+        "AutoIDProtection" => [
+            "FriendlyName" => "Enable ID Protection",
+            "Type" => "yesno",
+            "Default" => true,
+            "Description" => "Enable ID Protection on TLD pricing sync for compatible TLDs"
+        ],
         'DeleteMode' => [
             'FriendlyName' => 'Domain deletion mode',
             'Type' => 'dropdown',
@@ -1694,6 +1712,27 @@ function keysystems_GetTldPricing(array $params)
 
         $results[] = $item;
     }
+
+    if ($params['AutoDNSManagement']) {
+        DB::table('tbldomainpricing')
+            ->where('autoreg', 'keysystems')
+            ->update(['dnsmanagement' => 1]);
+    }
+    if ($params['AutoEmailForwarding']) {
+        DB::table('tbldomainpricing')
+            ->where('autoreg', 'keysystems')
+            ->update(['emailforwarding' => 1]);
+    }
+    if ($params['AutoIDProtection']) {
+        DB::table('tbldomainpricing AS p')
+            ->join('mod_rrpproxy_zones AS z', DB::raw('CONCAT(".", z.zone)'), '=', 'p.extension')
+            ->where('p.autoreg', 'keysystems')
+            ->update([
+                'p.idprotection' => DB::raw('`z.id_protection`'),
+                'p.eppcode' => DB::raw('`z.epp_required`')
+            ]);
+    }
+
     return $results;
 }
 

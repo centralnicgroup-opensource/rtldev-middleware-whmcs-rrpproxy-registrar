@@ -388,37 +388,100 @@ function keysystems_TransferDomain($params)
 {
     try {
         $api = new RRPProxyClient($params);
-        if ($params['tld'] == 'eu') {
-            $contact_id = $api->getOrCreateOwnerContact($params);
 
-            $data = [
-                'domain' => $params['domainname'],
-                'auth' => $params['eppcode'],
-                'action' => 'request',
-                'ownercontact0' => $contact_id,
-                'FORCEREQUEST' => 1
-            ];
-
-            $extensions = [];
-            $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", "eu.php"]);
-            if (file_exists($extensions_path)) {
-                require_once $extensions_path;
-                if (@$extensions['X-EU-REGISTRANT-CITIZENSHIP']) {
-                    $data['X-EU-REGISTRANT-CITIZENSHIP'] = $extensions['X-EU-REGISTRANT-CITIZENSHIP'];
-                }
-            }
-
-            $api->call('TransferDomain', $data);
-        } else {
-            $api->call('TransferDomain', [
-                'domain' => $params['domainname'],
-                'auth' => $params['eppcode'],
-                'FORCEREQUEST' => 1
-            ]);
+        // Domain transfer pre-check (apparently only for com/net/jobs/org/bin/info/name/mobi)
+        $data = ["DOMAIN" => $params["domainname"]];
+        if ($params["eppcode"]) {
+            $data["AUTH"] = $params["eppcode"];
         }
-        return ['success' => true];
+        $check = $api->call("CheckDomainTransfer", $data);
+        if ($check["code"] !== "218") {
+            return ["error" => $check["description"]];
+        }
+//        if (isset($check["property"]["authisvalid"]) && $check["property"]["authisvalid"][0] === "NO") {
+//            return ["error" => "Invaild Authorization Code"];
+//        }
+//        if (isset($check["property"]["transferlock"]) && $check["property"]["transferlock"][0] === "1") {
+//            return ["error" => "Transferlock is active. Therefore the Domain cannot be transferred."];
+//        }
+
+        // Get zone features
+        $zoneInfo = $api->getZoneInfo($params["tld"]);
+
+        // Determine Nameservers
+        $ns = [];
+        foreach ($params as $key => $n) {
+            if (preg_match("/^ns([0-9]+)$/", $key, $m)) {
+                $ns[(int)$m[1] - 1] = $n;
+            }
+        }
+
+        // Prepare domain transfer
+        $data = [
+            "DOMAIN" => $params["domainname"],
+            "ACTION" => "REQUEST",
+            "PERIOD" => $params["regperiod"],
+            "NAMESERVER" => $ns,
+            "AUTH" => $params["eppcode"],
+            "TRANSFERLOCK" => 1,
+            "FORCEREQUEST" => 1 // TODO what does this do?
+        ];
+
+        // Handle domains that require trade
+        if ($zoneInfo->requires_trade) {
+            $data["ACCEPT-TRADE"] = 1;
+        }
+
+        // Handle domains with free transfers
+        if (!$zoneInfo->renews_on_transfer) {
+            unset($data["PERIOD"]);
+        }
+
+        // Detect user-transfer
+//        if (isset($check["property"]["usertransferrequired"]) && $check["property"]["usertransferrequired"][0] === "1") {
+//            $data["ACTION"] = "USERTRANSFER";
+//        }
+
+        // Handle contacts
+        $isAfnic = preg_match("/\.(fr|pm|re|tf|wf|yt)$/i", $params["domainname"]);
+        $isAu = preg_match("/\.au$/i", $params["domainname"]);
+        $isCaUs = preg_match("/\.(ca|us)$/i", $params["domainname"]);
+        if ($isAfnic || $isAu || (!$isCaUs && !$zoneInfo->needs_trade)) {
+            $contactId = $api->getOrCreateOwnerContact($params);
+            if (!$isAfnic) {
+                $data["OWNERCONTACT0"] = $contactId;
+                $data["BILLINGCONTACT0"] = $contactId;
+            }
+            $data["ADMINCONTACT0"] = $contactId;
+            $data["TECHCONTACT0"] = $contactId;
+        }
+
+        // Handle additional fields
+        $tld = explode('.', $params["tld"]);
+        $tld = end($tld);
+        $extensions = [];
+        $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", "$tld.php"]);
+        if (file_exists($extensions_path)) {
+            require_once $extensions_path;
+            foreach ($extensions as $key => $val) {
+                $data[$key] = $val;
+            }
+            if (preg_match("/\.(ca|ro)$/i", $params["domainname"])) {
+                unset($data["X-CA-DISCLOSE"]);// not supported for transfers
+            }
+            if (preg_match("/\.ngo$/i", $params["domainname"])) {
+                unset($data["X-NGO-ACCEPT-REGISTRATION-TAC"]);// not supported for transfers
+            }
+        }
+
+        // Execute domain transfer
+        $transfer = $api->call("TransferDomain", $data);
+        if ($transfer["code"] !== "200") {
+            return ["error" => $transfer["description"]];
+        }
+        return ["success" => true];
     } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+        return ["error" => $e->getMessage()];
     }
 }
 

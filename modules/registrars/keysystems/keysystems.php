@@ -199,43 +199,43 @@ function keysystems_getConfigArray($params)
 function keysystems_GetDomainInformation(array $params)
 {
     $api = new RRPProxyClient($params);
-    $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+    $result = $api->call("StatusDomain", ["domain" => $params["domainname"]]);
 
     $nameservers = [];
     $i = 1;
-    foreach ($result['property']['nameserver'] as $nameserver) {
+    foreach ($result["property"]["nameserver"] as $nameserver) {
         $nameservers["ns" . $i] = $nameserver;
         $i++;
     }
 
     $domain = new Domain();
     $domain->setIsIrtpEnabled(true);
-    $domain->setDomain($result['property']['domain'][0]);
+    $domain->setDomain($result["property"]["domain"][0]);
     $domain->setNameservers($nameservers);
-    $domain->setTransferLock($result['property']['transferlock'][0]);
-    $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0]));
+    $domain->setTransferLock($result["property"]["transferlock"][0]);
+    $domain->setExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s.u", $result["property"]["registrationexpirationdate"][0]));
 
     //check contact status
     try {
-        $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
-        $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
-        if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
+        $contact = $api->call("StatusContact", ["contact" => $result["property"]["ownercontact"][0]]);
+        $domain->setRegistrantEmailAddress($contact["property"]["email"][0]);
+        if ($contact["property"]["verificationrequested"][0] == 1 && $contact["property"]["verified"][0] == 0) {
             $domain->setDomainContactChangePending(true);
         }
     } catch (Exception $ex) {
         // we suffer in silence...
     }
 
-    if (isset($result['property']['x-time-to-suspension'][0])) {
+    if (isset($result["property"]["x-time-to-suspension"][0])) {
         $domain->setPendingSuspension(true);
-        $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s', $result['property']['x-time-to-suspension'][0]));
+        $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s", $result["property"]["x-time-to-suspension"][0]));
     }
     $domain->setIrtpVerificationTriggerFields([
-        'Registrant' => [
-            'First Name',
-            'Last Name',
-            'Organization Name',
-            'Email',
+        "Registrant" => [
+            "First Name",
+            "Last Name",
+            "Organization Name",
+            "Email",
         ]
     ]);
     // -- addons
@@ -247,24 +247,24 @@ function keysystems_GetDomainInformation(array $params)
     );
     // dns management
     try {
-        $response = $api->call('CheckDNSZone', [
-            'dnszone' => $params['domainname']
+        $response = $api->call("CheckDNSZone", [
+            "dnszone" => $params["domainname"]
         ]);
     } catch (Exception $ex) {
-        $response['code'] = 0;
+        $response["code"] = 0;
     }
-    $domain->setDnsManagementStatus($response['code'] != 210);
+    $domain->setDnsManagementStatus($response["code"] != 210);
 
     // id protection
     $domain->setIdProtectionStatus(
-        isset($result['property']["x-whois-privacy"][0])
-        && $result['property']["x-whois-privacy"][0] > 0
+        isset($result["property"]["x-whois-privacy"][0])
+        && $result["property"]["x-whois-privacy"][0] > 0
     );
 
     // add custom data (for import purposes)
     // registrant vatid
     $vatid = "";
-    $keys = array_keys($result['property']);
+    $keys = array_keys($result["property"]);
     $pnames = preg_grep(
         "/admin|tech|billing/",
         preg_grep(
@@ -274,8 +274,8 @@ function keysystems_GetDomainInformation(array $params)
         PREG_GREP_INVERT
     );
     foreach ($pnames as $prop) {
-        if (!empty($result['property'][$prop][0])) {
-            $vatid = $result['property'][$prop][0];
+        if (!empty($result["property"][$prop][0])) {
+            $vatid = $result["property"][$prop][0];
             break;
         }
     }
@@ -294,7 +294,7 @@ function keysystems_GetDomainInformation(array $params)
         ),
         "isTrusteeUsed" => $isTrusteeUsed,
         "registrantTaxId" => $vatid,
-        "createdDate" => $result['property']['createddate'][0]
+        "createdDate" => $result["property"]["createddate"][0]
         //"domainfields" => ... TODO
     ];
 
@@ -374,7 +374,7 @@ function keysystems_RegisterDomain($params)
     if (!empty($params['ns5'])) {
         $fields['nameserver4'] = $params['ns5'];
     }
-    if ($params['idprotection']) {
+    if ($params['idprotection'] && !$params['TestMode']) {
         $fields['X-WHOISPRIVACY'] = 1;
     }
     $request = array_merge($fields, $extensions);
@@ -1150,7 +1150,10 @@ function keysystems_IDProtectToggle($params)
 {
     try {
         $api = new RRPProxyClient($params);
-        $api->call('ModifyDomain', ['domain' => $params['domainname'], 'X-WHOISPRIVACY' => ($params["protectenable"]) ? "1" : "0"]);
+        $api->call('ModifyDomain', [
+            'domain' => $params['domainname'],
+            'X-WHOISPRIVACY' => ($params["protectenable"]) ? "1" : "0"
+        ]);
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];

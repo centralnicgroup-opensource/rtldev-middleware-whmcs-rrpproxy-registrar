@@ -93,18 +93,18 @@ class RRPProxyClient
             ];
         } catch (\Exception $ex) {
             return [
-                "First Name" => '',
-                "Last Name" => '',
-                "Company Name" => '',
-                "Address" => '',
-                "Address 2" => '',
-                "City" => '',
-                "State" => '',
-                "Postcode" => '',
-                "Country" => '',
-                "Phone" => '',
-                "Fax" => '',
-                "Email" => ''
+                "First Name" => "",
+                "Last Name" => "",
+                "Company Name" => "",
+                "Address" => "",
+                "Address 2" => "",
+                "City" => "",
+                "State" => "",
+                "Postcode" => "",
+                "Country" => "",
+                "Phone" => "",
+                "Fax" => "",
+                "Email" => ""
             ];
         }
     }

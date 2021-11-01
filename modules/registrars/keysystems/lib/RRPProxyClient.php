@@ -92,7 +92,20 @@ class RRPProxyClient
                 "Email" => $response["property"]["email"][0]
             ];
         } catch (\Exception $ex) {
-            return [];
+            return [
+                "First Name" => '',
+                "Last Name" => '',
+                "Company Name" => '',
+                "Address" => '',
+                "Address 2" => '',
+                "City" => '',
+                "State" => '',
+                "Postcode" => '',
+                "Country" => '',
+                "Phone" => '',
+                "Fax" => '',
+                "Email" => ''
+            ];
         }
     }
 

@@ -198,11 +198,14 @@ function keysystems_GetDomainInformation(array $params)
     $domain->setExpiryDate(Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0]));
 
     //check contact status
-    $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
-
-    $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
-    if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
-        $domain->setDomainContactChangePending(true);
+    try {
+        $contact = $api->call('StatusContact', ['contact' => $result["property"]["ownercontact"][0]]);
+        $domain->setRegistrantEmailAddress($contact['property']['email'][0]);
+        if ($contact['property']['verificationrequested'][0] == 1 && $contact['property']['verified'][0] == 0) {
+            $domain->setDomainContactChangePending(true);
+        }
+    } catch (Exception $ex) {
+        // we suffer in silence...
     }
 
     if (isset($result['property']['x-time-to-suspension'][0])) {

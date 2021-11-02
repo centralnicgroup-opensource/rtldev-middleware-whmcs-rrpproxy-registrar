@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.9.0...v0.10.0) (2021-11-02)
+
+
+### Features
+
+* **pricing:** add options to auto tenable DNS management, email forwarding and ID protection ([9b9056e](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/9b9056e972efde7d07ee8c321152abc11752a466))
+
 # [0.9.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.6...v0.9.0) (2021-11-02)
 
 

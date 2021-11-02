@@ -1,3 +1,11 @@
+## [0.10.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.10.0...v0.10.1) (2021-11-02)
+
+
+### Bug Fixes
+
+* **contacts:** allow to modify contacts when existing ones are invalid ([268369b](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/268369b56d8f145ae89677b9ade7ab6e879212c9))
+* **ote:** whois privacy is not enabled in ot&e accounts ([e5ebbb8](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/e5ebbb8c88419723b76ad626d7cd8e3d9d6fdc56))
+
 # [0.10.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.9.0...v0.10.0) (2021-11-02)
 
 

@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.6...v0.9.0) (2021-11-02)
+
+
+### Features
+
+* **transfer:** improve domain transfer handling ([b72bb0d](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/b72bb0d49a5641925e94d0325d219210a829c167)), closes [#56](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/56)
+
 ## [0.8.6](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.8.5...v0.8.6) (2021-09-17)
 
 

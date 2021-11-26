@@ -1424,10 +1424,21 @@ function keysystems_TransferSync($params)
 
             // Set nameservers if defined in order
             if ($order->nameservers) {
-                $nameservers = explode(',', $order->nameservers);
-                $i = 0;
-                foreach ($nameservers as $nameserver) {
-                    $args['nameserver' . $i++] = $nameserver;
+                $existingNameservers = [];
+                if (isset($result["property"]["nameserver"])) {
+                    $existingNameservers = $result["property"]["nameserver"];
+                    sort($existingNameservers);
+                }
+
+                $orderNameservers = explode(",", $order->nameservers);
+                sort($orderNameservers);
+
+                $diffNameservers = array_udiff($orderNameservers, $existingNameservers, "strcasecmp");
+                if (count($diffNameservers) > 0) {
+                    $i = 0;
+                    foreach ($orderNameservers as $nameserver) {
+                        $args["nameserver" . $i++] = $nameserver;
+                    }
                 }
             }
         }
@@ -1489,7 +1500,7 @@ function keysystems_TransferSync($params)
         }
 
         // Update domain
-        if ($args) {
+        if (count($args) > 0) {
             try {
                 $args['domain'] = $domain;
                 $api->call('ModifyDomain', $args);

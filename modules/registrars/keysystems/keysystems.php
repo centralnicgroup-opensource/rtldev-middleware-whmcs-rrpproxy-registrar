@@ -1398,6 +1398,7 @@ function keysystems_TransferSync($params)
     }
 
     if ($values['completed']) {
+        $args = [];
         $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString();
 
         $zoneInfo = $api->getZoneInfo($params['tld']);
@@ -1488,11 +1489,13 @@ function keysystems_TransferSync($params)
         }
 
         // Update domain
-        try {
-            $args['domain'] = $domain;
-            $api->call('ModifyDomain', $args);
-        } catch (Exception $ex) {
-            $values['error'] = $ex->getMessage();
+        if ($args) {
+            try {
+                $args['domain'] = $domain;
+                $api->call('ModifyDomain', $args);
+            } catch (Exception $ex) {
+                $values['error'] = $ex->getMessage();
+            }
         }
     }
 

@@ -1719,6 +1719,13 @@ function keysystems_GetTldPricing(array $params)
         $results[] = $item;
     }
 
+    DB::table('tbldomainpricing AS p')
+        ->join('mod_rrpproxy_zones AS z', DB::raw('CONCAT(".", z.zone)'), '=', 'p.extension')
+        ->where('p.autoreg', 'keysystems')
+        ->update([
+            'p.eppcode' => DB::raw('`z`.`epp_required`')
+        ]);
+
     if ($params['AutoDNSManagement']) {
         DB::table('tbldomainpricing')
             ->where('autoreg', 'keysystems')
@@ -1734,8 +1741,7 @@ function keysystems_GetTldPricing(array $params)
             ->join('mod_rrpproxy_zones AS z', DB::raw('CONCAT(".", z.zone)'), '=', 'p.extension')
             ->where('p.autoreg', 'keysystems')
             ->update([
-                'p.idprotection' => DB::raw('`z.id_protection`'),
-                'p.eppcode' => DB::raw('`z.epp_required`')
+                'p.idprotection' => DB::raw('`z`.`id_protection`')
             ]);
     }
 

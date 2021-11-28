@@ -1,3 +1,15 @@
+# [0.11.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.10.2...v0.11.0) (2021-11-28)
+
+
+### Bug Fixes
+
+* **transfer-sync:** skip modify domain if not necessary ([0493843](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/04938434b46063894b7511b7b3db5e79c6c6ee8f))
+
+
+### Features
+
+* **transfer-sync:** only update nameservers if necessary ([e90e6bf](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/e90e6bfb119c8330df40468cc352dff0bb372235))
+
 ## [0.10.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.10.1...v0.10.2) (2021-11-28)
 
 

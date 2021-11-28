@@ -1,3 +1,10 @@
+## [0.10.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.10.1...v0.10.2) (2021-11-28)
+
+
+### Bug Fixes
+
+* **tld-sync:** fix db issue on tld pricing sync ([f44872b](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/f44872b05b3150ce48d4d04673b2ea3b47b41d97)), closes [#63](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/63)
+
 ## [0.10.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.10.0...v0.10.1) (2021-11-02)
 
 

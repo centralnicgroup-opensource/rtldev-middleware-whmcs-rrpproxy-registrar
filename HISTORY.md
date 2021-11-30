@@ -1,3 +1,10 @@
+## [0.11.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.11.1...v0.11.2) (2021-11-30)
+
+
+### Bug Fixes
+
+* **transfer:** fix transfer request ([d172fcf](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d172fcf6805f55d65b2fa61e5be80275abba380c))
+
 ## [0.11.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.11.0...v0.11.1) (2021-11-30)
 
 

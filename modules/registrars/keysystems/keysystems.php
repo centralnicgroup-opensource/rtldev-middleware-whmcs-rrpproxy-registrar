@@ -456,23 +456,25 @@ function keysystems_TransferDomain($params)
 
         // Prepare domain transfer
         $data = [
-            "DOMAIN" => $domainName,
-            "ACTION" => "REQUEST",
-            "PERIOD" => $params["regperiod"],
-            "NAMESERVER" => $ns,
-            "AUTH" => $params["eppcode"],
-            "TRANSFERLOCK" => 1,
-            "FORCEREQUEST" => 1 // TODO what does this do?
+            "domain" => $domainName,
+            "action" => "REQUEST",
+            "period" => $params["regperiod"],
+            "auth" => $params["eppcode"],
+            "transferlock" => 1,
+            "forcerequest" => 1 // TODO what does this do?
         ];
+        foreach ($ns as $i => $nsx) {
+            $data["nameserver" . $i] = $nsx;
+        }
 
         // Handle domains that require trade
         if ($zoneInfo->requires_trade) {
-            $data["ACCEPT-TRADE"] = 1;
+            $data["accept-trade"] = 1;
         }
 
         // Handle domains with free transfers
         if (!$zoneInfo->renews_on_transfer) {
-            unset($data["PERIOD"]);
+            unset($data["period"]);
         }
 
         // Detect user-transfer
@@ -487,11 +489,11 @@ function keysystems_TransferDomain($params)
         if ($isAfnic || $isAu || (!$isCaUs && !$zoneInfo->needs_trade)) {
             $contactId = $api->getOrCreateOwnerContact($params);
             if (!$isAfnic) {
-                $data["OWNERCONTACT0"] = $contactId;
-                $data["BILLINGCONTACT0"] = $contactId;
+                $data["ownercontact0"] = $contactId;
+                $data["billingcontact0"] = $contactId;
             }
-            $data["ADMINCONTACT0"] = $contactId;
-            $data["TECHCONTACT0"] = $contactId;
+            $data["admincontact0"] = $contactId;
+            $data["techcontact0"] = $contactId;
         }
 
         // Handle additional fields

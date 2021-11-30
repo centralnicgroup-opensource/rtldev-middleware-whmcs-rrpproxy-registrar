@@ -72,48 +72,13 @@ function keysystems_getConfigArray($params)
             }
             $dbChecked = true;
         }
-
-        $oldModule = 'rrpproxy';
-        $newModule = 'keysystems';
         if (@$_GET['migrate']) {
-            $oldConfig = DB::table('tblregistrars')
-                ->where('registrar', $oldModule)
-                ->pluck('value', 'setting');
-            if ($oldConfig) {
-                // This is needed for WHMCS v8 compatibility
-                if ((int) $params['whmcsVersion'][0] >= 8) {
-                    $oldConfig = $oldConfig->toArray();
-                }
-                $oldConfig['TestPassword'] = $oldConfig['Password'];
-                foreach ($oldConfig as $key => $val) {
-                    DB::table('tblregistrars')
-                        ->where('registrar', $newModule)
-                        ->where('setting', $key)
-                        ->update(['value' => $val]);
-                }
-            }
-            DB::table('tbldomains')->where('registrar', $oldModule)->update(['registrar' => $newModule]);
-            DB::table('tbldomainpricing')->where('autoreg', $oldModule)->update(['autoreg' => $newModule]);
-            DB::table('tblregistrars')->where('registrar', $oldModule)->delete();
-            $reloadLink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]?saved=true#keysystems";
-            header("Location: $reloadLink");
+            keysystems_migrateFromStockModule($params);
         }
-        if (!$params['Username'] && DB::table('tblregistrars')->where('registrar', $oldModule)->exists()) {
+        if (!$params['Username'] && DB::table('tblregistrars')->where('registrar', 'rrpproxy')->exists()) {
             $msgMigrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-primary' title='Click here to automatically migrate domains and TLD prices related to RRPproxy to this module!'>Migrate from old RRPproxy module</a>";
         }
-
-        $data = file_get_contents('https://raw.githubusercontent.com/rrpproxy/whmcs-rrpproxy-registrar/master/release.json');
-        if (!$data) {
-            $msgUpdate = '<br /><i class="fas fa-times-circle"></i> Unable to check for updates';
-        } else {
-            $json = json_decode($data);
-            if (version_compare(RRPPROXY_VERSION, $json->version, '<')) {
-                $msgUpdate = '<br /><i class="fas fa-exclamation-circle"></i> Update available! ';
-                $msgUpdate .= '<a class="btn btn-default btn-sm" href="https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases" target="_blank"><i class="fab fa-github"></i> Get it on GitHub</a>';
-            } else {
-                $msgUpdate = '<br /><i class="fas fa-check-circle"></i> You are up to date!';
-            }
-        }
+        $msgUpdate = keysystems_checkForUpdates();
     }
 
     return [
@@ -194,6 +159,57 @@ function keysystems_getConfigArray($params)
             'Description' => 'Enter your RRPproxy OT&amp;E Password',
         ]
     ];
+}
+
+/**
+ * Migrates module config and domains from the WHMCS stock rrpproxy module to this one
+ * @param array $params
+ */
+function keysystems_migrateFromStockModule(array $params): void
+{
+    $oldModule = 'rrpproxy';
+    $newModule = 'keysystems';
+    $oldConfig = DB::table('tblregistrars')
+        ->where('registrar', $oldModule)
+        ->pluck('value', 'setting');
+    if ($oldConfig) {
+        // This is needed for WHMCS v8 compatibility
+        if ((int) $params['whmcsVersion'][0] >= 8) {
+            $oldConfig = $oldConfig->toArray();
+        }
+        $oldConfig['TestPassword'] = $oldConfig['Password'];
+        foreach ($oldConfig as $key => $val) {
+            DB::table('tblregistrars')
+                ->where('registrar', $newModule)
+                ->where('setting', $key)
+                ->update(['value' => $val]);
+        }
+    }
+    DB::table('tbldomains')->where('registrar', $oldModule)->update(['registrar' => $newModule]);
+    DB::table('tbldomainpricing')->where('autoreg', $oldModule)->update(['autoreg' => $newModule]);
+    DB::table('tblregistrars')->where('registrar', $oldModule)->delete();
+    $reloadLink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]?saved=true#keysystems";
+    header("Location: $reloadLink");
+}
+
+/**
+ * @return string
+ */
+function keysystems_checkForUpdates(): string
+{
+    $data = file_get_contents('https://raw.githubusercontent.com/rrpproxy/whmcs-rrpproxy-registrar/master/release.json');
+    if (!$data) {
+        $msgUpdate = '<br /><i class="fas fa-times-circle"></i> Unable to check for updates';
+    } else {
+        $json = json_decode($data);
+        if (version_compare(RRPPROXY_VERSION, $json->version, '<')) {
+            $msgUpdate = '<br /><i class="fas fa-exclamation-circle"></i> Update available! ';
+            $msgUpdate .= '<a class="btn btn-default btn-sm" href="https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases" target="_blank"><i class="fab fa-github"></i> Get it on GitHub</a>';
+        } else {
+            $msgUpdate = '<br /><i class="fas fa-check-circle"></i> You are up to date!';
+        }
+    }
+    return $msgUpdate;
 }
 
 function keysystems_GetDomainInformation(array $params)
@@ -440,23 +456,25 @@ function keysystems_TransferDomain($params)
 
         // Prepare domain transfer
         $data = [
-            "DOMAIN" => $domainName,
-            "ACTION" => "REQUEST",
-            "PERIOD" => $params["regperiod"],
-            "NAMESERVER" => $ns,
-            "AUTH" => $params["eppcode"],
-            "TRANSFERLOCK" => 1,
-            "FORCEREQUEST" => 1 // TODO what does this do?
+            "domain" => $domainName,
+            "action" => "REQUEST",
+            "period" => $params["regperiod"],
+            "auth" => $params["eppcode"],
+            "transferlock" => 1,
+            "forcerequest" => 1 // TODO what does this do?
         ];
+        foreach ($ns as $i => $nsx) {
+            $data["nameserver" . $i] = $nsx;
+        }
 
         // Handle domains that require trade
         if ($zoneInfo->requires_trade) {
-            $data["ACCEPT-TRADE"] = 1;
+            $data["accept-trade"] = 1;
         }
 
         // Handle domains with free transfers
         if (!$zoneInfo->renews_on_transfer) {
-            unset($data["PERIOD"]);
+            unset($data["period"]);
         }
 
         // Detect user-transfer
@@ -471,11 +489,11 @@ function keysystems_TransferDomain($params)
         if ($isAfnic || $isAu || (!$isCaUs && !$zoneInfo->needs_trade)) {
             $contactId = $api->getOrCreateOwnerContact($params);
             if (!$isAfnic) {
-                $data["OWNERCONTACT0"] = $contactId;
-                $data["BILLINGCONTACT0"] = $contactId;
+                $data["ownercontact0"] = $contactId;
+                $data["billingcontact0"] = $contactId;
             }
-            $data["ADMINCONTACT0"] = $contactId;
-            $data["TECHCONTACT0"] = $contactId;
+            $data["admincontact0"] = $contactId;
+            $data["techcontact0"] = $contactId;
         }
 
         // Handle additional fields

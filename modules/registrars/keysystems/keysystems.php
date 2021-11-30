@@ -198,8 +198,9 @@ function keysystems_getConfigArray($params)
 
 function keysystems_GetDomainInformation(array $params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
-    $result = $api->call("StatusDomain", ["domain" => $params["domainname"]]);
+    $result = $api->call("StatusDomain", ["domain" => $domainName]);
 
     $nameservers = [];
     $i = 1;
@@ -243,12 +244,12 @@ function keysystems_GetDomainInformation(array $params)
     $forwardings = keysystems_GetEmailForwarding($params);
     $domain->setEmailForwardingStatus(
         !isset($forwardings["error"])
-        && !empty($forwardings)
+            && !empty($forwardings)
     );
     // dns management
     try {
         $response = $api->call("CheckDNSZone", [
-            "dnszone" => $params["domainname"]
+            "dnszone" => $domainName
         ]);
     } catch (Exception $ex) {
         $response["code"] = 0;
@@ -258,7 +259,7 @@ function keysystems_GetDomainInformation(array $params)
     // id protection
     $domain->setIdProtectionStatus(
         isset($result["property"]["x-whois-privacy"][0])
-        && $result["property"]["x-whois-privacy"][0] > 0
+            && $result["property"]["x-whois-privacy"][0] > 0
     );
 
     // add custom data (for import purposes)
@@ -288,10 +289,8 @@ function keysystems_GetDomainInformation(array $params)
 
     // set custom data
     $domain->registrarData = [
-        "isPremium" => (int) (
-            isset($result["property"]["x-fee-class"][0])
-            && $result["property"]["x-fee-class"][0] === "premium"
-        ),
+        "isPremium" => (int) (isset($result["property"]["x-fee-class"][0])
+            && $result["property"]["x-fee-class"][0] === "premium"),
         "isTrusteeUsed" => $isTrusteeUsed,
         "registrantTaxId" => $vatid,
         "createdDate" => $result["property"]["createddate"][0]
@@ -332,6 +331,7 @@ function keysystems_ResendIRTPVerificationEmail(array $params)
 function keysystems_RegisterDomain($params)
 {
     $params = injectDomainObjectIfNecessary($params);
+    $domainName = $params["sld"] . "." . $params["tld"];
 
     if ($params['tld'] == 'it' && $params['additionalfields']['Legal Type'] == 'Italian and foreign natural persons') {
         $params['companyname'] = '';
@@ -355,7 +355,7 @@ function keysystems_RegisterDomain($params)
     }
 
     $fields = [
-        'domain' => $params['domainname'],
+        'domain' => $domainName,
         'period' => $params['regperiod'],
         'transferlock' => ($params["TransferLock"] == "on") ? 1 : 0,
         'ownercontact0' => $contact_id,
@@ -407,11 +407,12 @@ function keysystems_RegisterDomain($params)
  */
 function keysystems_TransferDomain($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
 
         // Domain transfer pre-check (apparently only for com/net/jobs/org/bin/info/name/mobi)
-        $data = ["DOMAIN" => $params["domainname"]];
+        $data = ["DOMAIN" => $domainName];
         if ($params["eppcode"]) {
             $data["AUTH"] = $params["eppcode"];
         }
@@ -419,12 +420,12 @@ function keysystems_TransferDomain($params)
         if ($check["code"] !== "218") {
             return ["error" => $check["description"]];
         }
-//        if (isset($check["property"]["authisvalid"]) && $check["property"]["authisvalid"][0] === "NO") {
-//            return ["error" => "Invaild Authorization Code"];
-//        }
-//        if (isset($check["property"]["transferlock"]) && $check["property"]["transferlock"][0] === "1") {
-//            return ["error" => "Transferlock is active. Therefore the Domain cannot be transferred."];
-//        }
+        //        if (isset($check["property"]["authisvalid"]) && $check["property"]["authisvalid"][0] === "NO") {
+        //            return ["error" => "Invaild Authorization Code"];
+        //        }
+        //        if (isset($check["property"]["transferlock"]) && $check["property"]["transferlock"][0] === "1") {
+        //            return ["error" => "Transferlock is active. Therefore the Domain cannot be transferred."];
+        //        }
 
         // Get zone features
         $zoneInfo = $api->getZoneInfo($params["tld"]);
@@ -439,7 +440,7 @@ function keysystems_TransferDomain($params)
 
         // Prepare domain transfer
         $data = [
-            "DOMAIN" => $params["domainname"],
+            "DOMAIN" => $domainName,
             "ACTION" => "REQUEST",
             "PERIOD" => $params["regperiod"],
             "NAMESERVER" => $ns,
@@ -459,14 +460,14 @@ function keysystems_TransferDomain($params)
         }
 
         // Detect user-transfer
-//        if (isset($check["property"]["usertransferrequired"]) && $check["property"]["usertransferrequired"][0] === "1") {
-//            $data["ACTION"] = "USERTRANSFER";
-//        }
+        //        if (isset($check["property"]["usertransferrequired"]) && $check["property"]["usertransferrequired"][0] === "1") {
+        //            $data["ACTION"] = "USERTRANSFER";
+        //        }
 
         // Handle contacts
-        $isAfnic = preg_match("/\.(fr|pm|re|tf|wf|yt)$/i", $params["domainname"]);
-        $isAu = preg_match("/\.au$/i", $params["domainname"]);
-        $isCaUs = preg_match("/\.(ca|us)$/i", $params["domainname"]);
+        $isAfnic = preg_match("/\.(fr|pm|re|tf|wf|yt)$/i", $domainName);
+        $isAu = preg_match("/\.au$/i", $domainName);
+        $isCaUs = preg_match("/\.(ca|us)$/i", $domainName);
         if ($isAfnic || $isAu || (!$isCaUs && !$zoneInfo->needs_trade)) {
             $contactId = $api->getOrCreateOwnerContact($params);
             if (!$isAfnic) {
@@ -487,11 +488,11 @@ function keysystems_TransferDomain($params)
             foreach ($extensions as $key => $val) {
                 $data[$key] = $val;
             }
-            if (preg_match("/\.(ca|ro)$/i", $params["domainname"])) {
-                unset($data["X-CA-DISCLOSE"]);// not supported for transfers
+            if (preg_match("/\.(ca|ro)$/i", $domainName)) {
+                unset($data["X-CA-DISCLOSE"]); // not supported for transfers
             }
-            if (preg_match("/\.ngo$/i", $params["domainname"])) {
-                unset($data["X-NGO-ACCEPT-REGISTRATION-TAC"]);// not supported for transfers
+            if (preg_match("/\.ngo$/i", $domainName)) {
+                unset($data["X-NGO-ACCEPT-REGISTRATION-TAC"]); // not supported for transfers
             }
         }
 
@@ -524,15 +525,16 @@ function keysystems_TransferDomain($params)
  */
 function keysystems_RenewDomain($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
 
     try {
         $domain = WHMCS\Domain\Domain::find($params['domainid']);
         $zoneInfo = $api->getZoneInfo($params["domainObj"]->getLastTLDSegment());
         if (!$zoneInfo->supports_renewals) {
-            $api->call('SetDomainRenewalMode', ['domain' => $params['domainname'], 'renewalmode' => 'RENEWONCE']);
+            $api->call('SetDomainRenewalMode', ['domain' => $domainName, 'renewalmode' => 'RENEWONCE']);
         } else {
-            $api->call('RenewDomain', ['domain' => $params['domainname'], 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
+            $api->call('RenewDomain', ['domain' => $domainName, 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
         }
         return ['success' => true];
     } catch (Exception $ex) {
@@ -553,9 +555,10 @@ function keysystems_RenewDomain($params)
  */
 function keysystems_GetNameservers($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
-        $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        $result = $api->call('StatusDomain', ['domain' => $domainName]);
 
         $values = [
             'ns1' => $result['property']['nameserver'][0],
@@ -622,9 +625,10 @@ function keysystems_SaveNameservers($params)
  */
 function keysystems_GetContactDetails($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
-        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        $response = $api->call('StatusDomain', ['domain' => $domainName]);
 
         $owner_id = $response["property"]["ownercontact"][0];
         $admin_id = $response["property"]["admincontact"][0];
@@ -666,13 +670,13 @@ function keysystems_GetContactDetails($params)
  */
 function keysystems_SaveContactDetails($params)
 {
-    $domain = $params['sld'] . '.' . $params['tld'];
+    $domainName = $params["sld"] . "." . $params["tld"];
     $values = [];
     $args = [];
 
     try {
         $api = new RRPProxyClient($params);
-        $response = $api->call('StatusDomain', ['domain' => $domain]);
+        $response = $api->call('StatusDomain', ['domain' => $domainName]);
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
@@ -711,7 +715,7 @@ function keysystems_SaveContactDetails($params)
 
     try {
         if ($args && $zoneInfo->needs_trade && $args['ownercontact0']) {
-            $tradeParams['domain'] = $domain;
+            $tradeParams['domain'] = $domainName;
             $tradeParams = ['ownercontact0' => $args['ownercontact0']];
             if ($params['tld'] == "swiss") {
                 $tradeParams['X-SWISS-UID'] = $params['additionalfields']['UID'];
@@ -720,7 +724,7 @@ function keysystems_SaveContactDetails($params)
             unset($args['ownercontact0']);
         }
         if ($args) {
-            $args['domain'] = $domain;
+            $args['domain'] = $domainName;
             $api->call('ModifyDomain', $args);
         }
     } catch (Exception $ex) {
@@ -842,9 +846,10 @@ function keysystems_GetDomainSuggestions($params)
  */
 function keysystems_GetRegistrarLock($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
-        $result = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        $result = $api->call('StatusDomain', ['domain' => $domainName]);
         if ($result['property']['transferlock'][0] == 0) {
             return "unlocked";
         } else {
@@ -866,9 +871,10 @@ function keysystems_GetRegistrarLock($params)
  */
 function keysystems_SaveRegistrarLock($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
-        $api->call('ModifyDomain', ['domain' => $params['domainname'], 'transferlock' => ($params['lockenabled'] == 'locked') ? 1 : 0]);
+        $api->call('ModifyDomain', ['domain' => $domainName, 'transferlock' => ($params['lockenabled'] == 'locked') ? 1 : 0]);
         return ['success' => 'success'];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -887,11 +893,11 @@ function keysystems_SaveRegistrarLock($params)
 function keysystems_GetDNS($params)
 {
     $values = [];
-
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
 
     try {
-        $response = $api->call('CheckDNSZone', ['dnszone' => $params['domainname']]);
+        $response = $api->call('CheckDNSZone', ['dnszone' => $domainName]);
         $zoneExists = ($response['code'] == 210);
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -899,9 +905,9 @@ function keysystems_GetDNS($params)
 
     if (!$zoneExists) {
         try {
-            $api->call('AddDNSZone', ['dnszone' => $params['domainname']]);
+            $api->call('AddDNSZone', ['dnszone' => $domainName]);
             $fields = [
-                'domain' => $params['domainname'],
+                'domain' => $domainName,
                 'nameserver0' => "ns1.dnsres.net",
                 'nameserver1' => "ns2.dnsres.net",
                 'nameserver2' => "ns3.dnsres.net",
@@ -915,14 +921,14 @@ function keysystems_GetDNS($params)
     }
 
     try {
-        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'wide' => 1]);
+        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $domainName, 'wide' => 1]);
         $webForwards = [];
         for ($i = 0; $i < $response['property']['count'][0]; $i++) {
             $name = $response['property']['name'][$i];
             $type = $response['property']['type'][$i];
             $content = $response['property']['content'][$i];
             $priority = $response['property']['prio'][$i];
-            $source = ($name == "@") ? $params['domainname'] : $name . "." . $params['domainname'];
+            $source = ($name == "@") ? $domainName : $name . "." . $domainName;
 
             if ($response['property']['locked'][$i] == 1) {
                 $forward = $api->call('QueryWebFwdList', ['source' => $source, 'wide' => 1]);
@@ -957,17 +963,18 @@ function keysystems_SaveDNS($params)
 {
     $values = [];
     $oldZone = [];
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
 
     try {
-        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $params['domainname'], 'orderby' => "type", 'wide' => 1]);
+        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $domainName, 'orderby' => "type", 'wide' => 1]);
 
         for ($i = 0; $i < $response['property']['count'][0]; $i++) {
             $name = $response['property']['name'][$i];
             $type = $response['property']['type'][$i];
             $content = $response['property']['content'][$i];
             $priority = $response['property']['prio'][$i];
-            $source = ($name == "@") ? $params['domainname'] : $name . "." . $params['domainname'];
+            $source = ($name == "@") ? $domainName : $name . "." . $domainName;
 
             if ($response['property']['locked'][$i] == 1) {
                 $forward = $api->call('QueryWebFwdList', ['source' => $source, 'wide' => 1]);
@@ -997,14 +1004,14 @@ function keysystems_SaveDNS($params)
             if (!$record['address']) {
                 continue;
             }
-            if (!$record['hostname'] || $record['hostname'] == $params['domainname']) {
+            if (!$record['hostname'] || $record['hostname'] == $domainName) {
                 $record['hostname'] = "@";
             }
 
             switch ($record['type']) {
                 case "URL":
                 case "FRAME":
-                    $source = $record['hostname'] == "@" ? $params['domainname'] : $record['hostname'] . '.' . $params['domainname'];
+                    $source = $record['hostname'] == "@" ? $domainName : $record['hostname'] . '.' . $domainName;
                     $type = ($record['type'] == "URL") ? "RD" : "MRD";
                     $api->call('AddWebFwd', ['source' => $source, 'target' => $record['address'], 'type' => $type]);
                     break;
@@ -1020,7 +1027,7 @@ function keysystems_SaveDNS($params)
             }
         }
 
-        $fields = ['dnszone' => $params['domainname']];
+        $fields = ['dnszone' => $domainName];
         $i = 0;
         foreach ($oldZone as $record) {
             $fields['DELRR' . $i++] = $record;
@@ -1046,9 +1053,10 @@ function keysystems_SaveDNS($params)
  */
 function keysystems_GetEmailForwarding($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
     try {
-        $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
+        $response = $api->call('QueryMailFwdList', ['dnszone' => $domainName]);
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
@@ -1070,9 +1078,10 @@ function keysystems_GetEmailForwarding($params)
  */
 function keysystems_SaveEmailForwarding($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
     try {
-        $response = $api->call('QueryMailFwdList', ['dnszone' => $params['domainname']]);
+        $response = $api->call('QueryMailFwdList', ['dnszone' => $domainName]);
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
@@ -1086,7 +1095,7 @@ function keysystems_SaveEmailForwarding($params)
     }
 
     foreach ($params["prefix"] as $key => $value) {
-        $from = $value . "@" . $params['domainname'];
+        $from = $value . "@" . $domainName;
         $to = $params["forwardto"][$key];
         if (!$value || !$to) {
             // invalid
@@ -1148,10 +1157,11 @@ function keysystems_SaveEmailForwarding($params)
  */
 function keysystems_IDProtectToggle($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
         $api->call('ModifyDomain', [
-            'domain' => $params['domainname'],
+            'domain' => $domainName,
             'X-WHOISPRIVACY' => ($params["protectenable"]) ? "1" : "0"
         ]);
         return ['success' => true];
@@ -1175,17 +1185,18 @@ function keysystems_IDProtectToggle($params)
  */
 function keysystems_GetEPPCode($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     try {
         $api = new RRPProxyClient($params);
         $needSetAuthcode = ['de', 'be', 'no', 'eu'];
         if (in_array($params['tld'], $needSetAuthcode)) {
             try {
-                $response = $api->call('SetAuthcode', ['domain' => $params['domainname']]);
+                $response = $api->call('SetAuthcode', ['domain' => $domainName]);
             } catch (Exception $ex) {
-                $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+                $response = $api->call('StatusDomain', ['domain' => $domainName]);
             }
         } else {
-            $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+            $response = $api->call('StatusDomain', ['domain' => $domainName]);
         }
 
         if (strlen($response["property"]["auth"][0])) {
@@ -1216,8 +1227,9 @@ function keysystems_GetEPPCode($params)
  */
 function keysystems_ReleaseDomain($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $fields = [
-        'domain' => $params['domainname'],
+        'domain' => $domainName,
     ];
     if (!empty($params['transfertag'])) {
         $fields["target"] = $params['transfertag'];
@@ -1243,11 +1255,12 @@ function keysystems_ReleaseDomain($params)
  */
 function keysystems_RequestDelete($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
 
     if ($params['DeleteMode'] == 'ImmediateIfPossible') {
         try {
-            $api->call('DeleteDomain', ['domain' => $params['domainname']]);
+            $api->call('DeleteDomain', ['domain' => $domainName]);
             return ['success' => true];
         } catch (Exception $ex) {
             // We revert to AUTODELETE
@@ -1255,7 +1268,7 @@ function keysystems_RequestDelete($params)
     }
 
     try {
-        $api->call('SetDomainRenewalmode', ['domain' => $params['domainname'], 'renewalmode' => 'AUTODELETE']);
+        $api->call('SetDomainRenewalmode', ['domain' => $domainName, 'renewalmode' => 'AUTODELETE']);
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1522,6 +1535,7 @@ function keysystems_TransferSync($params)
  */
 function keysystems_dnssec($params)
 {
+    $domainName = $params["sld"] . "." . $params["tld"];
     $api = new RRPProxyClient($params);
     $error = null;
     $dsData = [];
@@ -1540,11 +1554,11 @@ function keysystems_dnssec($params)
             if (!$fields) {
                 $fields['DNSSECDELALL'] = 1;
             }
-            $fields['domain'] = $params['domainname'];
+            $fields['domain'] = $domainName;
             $api->call('ModifyDomain', $fields);
         }
 
-        $response = $api->call('StatusDomain', ['domain' => $params['domainname']]);
+        $response = $api->call('StatusDomain', ['domain' => $domainName]);
         $dsdata_rrp = (isset($response['property']['dnssecdsdata'])) ? $response['property']['dnssecdsdata'] : [];
         $keydata_rrp = (isset($response['property']['dnssec'])) ? $response['property']['dnssec'] : [];
 

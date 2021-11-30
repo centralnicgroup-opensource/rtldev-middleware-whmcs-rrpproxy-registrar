@@ -1,3 +1,10 @@
+## [0.11.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.11.0...v0.11.1) (2021-11-30)
+
+
+### Bug Fixes
+
+* **params:** no longer use undocumented domainname parameter ([5c1f5fd](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/5c1f5fd03b752142db5f9a96abedfe13719a4cce))
+
 # [0.11.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.10.2...v0.11.0) (2021-11-28)
 
 

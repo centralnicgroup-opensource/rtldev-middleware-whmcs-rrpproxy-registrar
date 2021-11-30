@@ -358,4 +358,29 @@ class RRPProxyClient
         }
         return $hash;
     }
+
+    /**
+     * Format Period String into useable format and filter out values unsupported by WHMCS
+     * Reset Periods will also get nicely parsed into integers (e.g. R1Y)
+     * @param string $periodStr Period String e.g. "1Y,2Y,3Y,4Y"
+     * @return array
+     */
+    public function formatPeriods(string $periodStr): array
+    {
+        $periods = explode(",", $periodStr);
+        return array_values(array_unique( // unique values, re-indexed
+            array_map( // convert strings to ints
+                "intval",
+                preg_grep( // filter out 1M period, not supported by whmcs at all
+                    "/^1M$/",
+                    preg_replace(
+                        "/^R/", // replace "R" of reset periods
+                        "",
+                        $periods
+                    ),
+                    PREG_GREP_INVERT
+                )
+            )
+        ));
+    }
 }

@@ -1838,3 +1838,83 @@ function keysystems_ClientArea()
 {
     return null;
 }
+
+/**
+ * Return Zone Configuration / Feature data
+ * @param array $params common module parameters
+ * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+ * @return array|null
+ */
+function keysystems_GetZoneFeatures(array $params): ?array
+{
+    $domainName = $params["sld"] . "." . $params["tld"];
+    $api = new RRPProxyClient($params);
+    try {
+        $zoneInfo = $api->getZoneInfo($params["tld"]);
+        $registrationPeriods = $api->formatPeriods($zoneInfo->periods);
+        $renewalPeriods = $registrationPeriods;
+        $transferPeriods = $registrationPeriods;
+        $transferResetPeriods = $registrationPeriods;
+
+        $isAfnicTLD = preg_match("/\.(fr|pm|re|tf|wf|yt)$/i", $domainName);
+        $isAuTLD = preg_match("/\.au$/i", $domainName);
+        $isCaUsTLD = preg_match("/\.(ca|us)$/i", $domainName);
+        $contactsForTransfer = [];
+        if ($isAfnicTLD) {
+            $contactsForTransfer = ["ADMINCONTACT", "TECHCONTACT"];
+        } elseif ($isAuTLD || (!$isCaUsTLD && $zoneInfo->needs_trade)) {
+            $contactsForTransfer = ["OWNERCONTACT", "ADMINCONTACT", "TECHCONTACT", "BILLINGCONTACT"];
+        }
+
+        //TODO add missing info from zoneInfo: handle_updatable
+        $data = [
+            "tld" => [
+                "label" => $params["tld"],
+                "class" => null,
+                "isAFNIC" => $isAfnicTLD,
+                "repository" => null
+            ],
+            "registration" => [
+                "periods" => $registrationPeriods,
+                "defaultPeriod" => $registrationPeriods[0]
+            ],
+            "renewal" => [
+                "periods" => $renewalPeriods,
+                "defaultPeriod" => $renewalPeriods[0],
+                "explicit" => $zoneInfo->supports_renewals,
+                "graceDays" => $zoneInfo->grace_days
+            ],
+            "redemption" => [
+                "days" => $zoneInfo->redemption_days
+            ],
+            "transfer" => [
+                "periods" => $transferPeriods,
+                "resetPeriods" => $transferResetPeriods,
+                "defaultPeriod" => $transferPeriods[0], // evtl. 0Y
+                "isFree" => !$zoneInfo->renews_on_transfer,
+                "includeContacts" => !empty($contactsForTransfer),
+                "contacts" => $contactsForTransfer,
+                "requiresAuthCode" => $zoneInfo->epp_required
+            ],
+            "trade" => [
+                "required" => $zoneInfo->needs_trade,
+                "isStandard" => true,
+                "isIRTP" => false,
+                "triggerFields" => ["Registrant" => ["First Name", "Last Name", "Organization Name", "Email"]]
+            ],
+            "update" => [
+                "unlockWithAuthCode" => (bool)preg_match("/\.fi$/i", $params["tld"]),
+            ],
+            "addons" => [
+                "idprotection" => $zoneInfo->id_protection
+            ],
+            "registrant" => [
+                "changeBy" => null
+            ]
+        ];
+        return $data;
+    } catch (Exception $ex) {
+        //TODO handle this somehow
+        return [];
+    }
+}

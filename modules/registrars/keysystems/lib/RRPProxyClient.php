@@ -235,7 +235,10 @@ class RRPProxyClient
             try {
                 $result = $this->call('GetZoneInfo', ['ZONE' => $tld]);
             } catch (\Exception $ex) {
-                return $zone;
+                if ($zone) {
+                    return $zone;
+                }
+                return ['error' => 'GetZoneInfo - API request failed: ' . $ex->getMessage()];
             }
 
             if (!is_array($result)) {

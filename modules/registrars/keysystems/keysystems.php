@@ -1861,9 +1861,9 @@ function keysystems_GetZoneFeatures(array $params): ?array
         $isCaUsTLD = preg_match("/\.(ca|us)$/i", $domainName);
         $contactsForTransfer = [];
         if ($isAfnicTLD) {
-            $contactsForTransfer = [ "ADMINCONTACT", "TECHCONTACT" ];
+            $contactsForTransfer = ["ADMINCONTACT", "TECHCONTACT"];
         } elseif ($isAuTLD || (!$isCaUsTLD && $zoneInfo->needs_trade)) {
-            $contactsForTransfer = [ "OWNERCONTACT", "ADMINCONTACT", "TECHCONTACT", "BILLINGCONTACT" ];
+            $contactsForTransfer = ["OWNERCONTACT", "ADMINCONTACT", "TECHCONTACT", "BILLINGCONTACT"];
         }
 
         //TODO add missing info from zoneInfo: handle_updatable
@@ -1890,7 +1890,7 @@ function keysystems_GetZoneFeatures(array $params): ?array
             "transfer" => [
                 "periods" => $transferPeriods,
                 "resetPeriods" => $transferResetPeriods,
-                "defaultPeriod" => $transferPeriods[0],// evtl. 0Y
+                "defaultPeriod" => $transferPeriods[0], // evtl. 0Y
                 "isFree" => !$zoneInfo->renews_on_transfer,
                 "includeContacts" => !empty($contactsForTransfer),
                 "contacts" => $contactsForTransfer,
@@ -1900,7 +1900,7 @@ function keysystems_GetZoneFeatures(array $params): ?array
                 "required" => $zoneInfo->needs_trade,
                 "isStandard" => true,
                 "isIRTP" => false,
-                "triggerFields" => [ "Registrant" => [ "First Name", "Last Name", "Organization Name", "Email" ]]
+                "triggerFields" => ["Registrant" => ["First Name", "Last Name", "Organization Name", "Email"]]
             ],
             "update" => [
                 "unlockWithAuthCode" => (bool)preg_match("/\.fi$/i", $params["tld"]),

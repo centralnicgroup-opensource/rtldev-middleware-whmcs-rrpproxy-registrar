@@ -269,22 +269,36 @@ class RRPProxyClient
         return $zone;
     }
 
-    public function call($command, $params = array())
+    private function convertidn($idn)
     {
-        //doing IDN Conversion
-        $idnConvertDomainCommands = ['AddDomain', 'ModifyDomain', 'RenewDomain', 'TransferDomain', 'StatusDomain', 'DeleteDomain', 'PushDomain'];
-        $idnConvertDNSCommands = ['AddDNSZone', 'ModifyDNSZone', 'QueryDNSZoneRRList'];
+        if ((bool)preg_match("/^[a-zA-Z0-9\.-]+$/", $idn)) { // only ascii chars?
+            return $idn;
+        }
+        $isNonTransitionalTLD = (bool)preg_match("/\.(be|ca|de|fr|pm|re|swiss|tf|wf|yt)\.?$/i", $idn);
+        $tmp = idn_to_ascii(
+            $idn,
+            $isNonTransitionalTLD ? IDNA_NONTRANSITIONAL_TO_ASCII : IDNA_DEFAULT,
+            INTL_IDNA_VARIANT_UTS46
+        );
+        return ($tmp === false) ? $idn : $tmp;
+    }
 
-        if (function_exists("idn_to_ascii")) {
-            if (in_array($command, $idnConvertDomainCommands)) {
-                $idnDomain = idn_to_ascii($params['domain']);
-                $params['domain'] = ($idnDomain ? $idnDomain : $params['domain']);
-            }
-            if (in_array($command, $idnConvertDNSCommands)) {
-                $dnszoneIDN = idn_to_ascii($params['dnszone']);
-                $params['dnszone'] = ($dnszoneIDN ? $dnszoneIDN : $params['dnszone']);
+    public function call($command, $params = [])
+    {
+        // doing idn conversion
+        if (function_exists("idn_to_ascii") && !empty($params)) {
+            // php module php<version>-intl
+            // in case we start translating OBJECTID, check for
+            // OBJECTCLASS /^DOMAIN(APPLICATION|BLOCKING)?|NAMESERVER|NS$/
+            $paramRegex = "/^dnszone|nameserver$/i";
+            foreach ($params as $key => $val) {
+                if ((bool)preg_match($paramRegex, $key)) {
+                    $params[$key] = $this->convertidn($params[$key]);
+                }
             }
         }
+
+        // api request
         $url = $this->api_url;
         $params['command'] = $command;
         foreach ($params as $key => $val) {
@@ -313,7 +327,6 @@ class RRPProxyClient
 
         $results = $this->processResponse($response);
         logModuleCall('keysystems', $command, $params, $response, $results, array($params['Username'], $params['Password']));
-
 
         if ((preg_match('/^2/', $results['code']))) { //Successful Return Codes (2xx), return the results.
             $this->retry = false;

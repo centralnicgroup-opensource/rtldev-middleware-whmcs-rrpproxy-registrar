@@ -1,3 +1,16 @@
+# [0.12.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.11.2...v0.12.0) (2021-12-13)
+
+
+### Bug Fixes
+
+* **idn conversion:** reviewed ([37da0eb](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/37da0ebde9a75fd0dd1130083acb15525d77a7e8)), closes [#68](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/68)
+* **zoneinfo:** return error if no zone info and request failed ([58f4aab](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/58f4aaba01e7fcbd984a9e413cffa5f10e7c2a5c))
+
+
+### Features
+
+* **migrator:** add GetZoneFeatures function for cnic-migrator ([fee394e](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/fee394e7ded46e32512b58dce48495d2dbe16bfb))
+
 ## [0.11.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.11.1...v0.11.2) (2021-11-30)
 
 

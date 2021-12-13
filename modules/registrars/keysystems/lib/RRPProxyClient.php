@@ -25,7 +25,6 @@ use Illuminate\Database\Capsule\Manager as DB;
 
 class RRPProxyClient
 {
-
     protected $params;
 
     public function __construct($params)

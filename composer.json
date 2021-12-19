@@ -10,13 +10,16 @@
         }
     ],
     "autoload": {
-        "psr-4": {"WHMCS\\Module\\Registrar\\RRPProxy\\": "modules/registrars/keysystems/lib/"}
+        "psr-4": {"WHMCS\\Module\\Registrar\\RRPproxy\\": "modules/registrars/keysystems/lib/"}
     },
     "config": {
         "platform": {
             "php": "7.4.0"
         },
-        "vendor-dir": "modules/registrars/keysystems/vendor"
+        "vendor-dir": "modules/registrars/keysystems/vendor",
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     },
     "scripts": {
         "phpstan": [

@@ -12,6 +12,5 @@ define('WHMCS', true);
 
 require_once $whmcsPath . '/vendor/autoload.php';
 require_once $whmcsPath . '/includes/functions.php';
-//require_once $whmcsPath . '/includes/clientfunctions.php';
-//require_once $whmcsPath . '/includes/invoicefunctions.php';
-//require_once $whmcsPath . '/includes/quotefunctions.php';
+require_once $whmcsPath . '/includes/clientfunctions.php';
+require_once $whmcsPath . '/includes/registrarfunctions.php';

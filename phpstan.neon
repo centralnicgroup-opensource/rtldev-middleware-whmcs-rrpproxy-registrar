@@ -12,6 +12,7 @@ parameters:
         - tests
     excludePaths:
         analyse:
+            - build
             - node_modules
             - modules/registrars/keysystems/vendor
             - tests
@@ -28,3 +29,6 @@ parameters:
         -
             message: '#Constant ROOTDIR not found.#'
             path: resources/domains/additionalfields.php
+        - '#Constant RRPPROXY_VERSION not found#'
+        - '#Call to an undefined static method Illuminate\\Database\\Capsule\\Manager::raw\(\)#'
+        - '#WHMCS\\Domain#'

@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.12.0...v0.12.1) (2021-12-19)
+
+
+### Bug Fixes
+
+* **transfersync:** log subsequent failures instead of returning them ([c462d2d](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/c462d2d33ff30c253b58ed9320914899e13d9d02))
+
 # [0.12.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.11.2...v0.12.0) (2021-12-13)
 
 

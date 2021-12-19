@@ -48,8 +48,9 @@
     "semantic-release": "^18.0.0"
   },
   "scripts": {
-    "codeCheck": "phpcs --standard=PSR12 -q -n --colors --extensions=php,inc,lib --ignore=node_modules,vendor,templates_c,.github,scripts .",
-    "codeFix": "phpcbf --standard=PSR12 -q --extensions=php,inc,lib --ignore=node_modules,vendor,templates_c,.github,scripts .",
+    "codeCheck": "composer run-script codecheck",
+    "codeFix": "composer run-script codefix",
+    "phpStan": "composer run-script phpstan",
     "phpCompatibility": "./scripts/phpcompatibility.sh"
   }
 }

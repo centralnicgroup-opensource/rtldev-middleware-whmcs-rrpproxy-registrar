@@ -1,0 +1,30 @@
+parameters:
+    level: 8
+    fileExtensions:
+        - php
+        - module
+        - inc
+    paths:
+        - .
+    scanFiles:
+    scanDirectories:
+        - modules
+        - tests
+    excludePaths:
+        analyse:
+            - node_modules
+            - modules/registrars/keysystems/vendor
+            - tests
+            - */whmcs-foundation
+            - */whmcs-base
+    bootstrapFiles:
+        - tests/_bootstrap.phpstan.php
+        - modules/registrars/keysystems/vendor/autoload.php
+    ignoreErrors:
+        -
+            message: '#Variable \$params might not be defined.#'
+            paths:
+                - modules/registrars/keysystems/tlds/*.php
+        -
+            message: '#Constant ROOTDIR not found.#'
+            path: resources/domains/additionalfields.php

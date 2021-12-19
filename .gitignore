@@ -22,3 +22,6 @@ build
 
 # phpunit
 .phpunit.result.cache
+
+# config
+tests/phpstan.config.php

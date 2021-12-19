@@ -1401,7 +1401,7 @@ function keysystems_Sync($params)
  */
 function keysystems_TransferSync($params)
 {
-    $values = ['completed' => false, 'failed' => false];
+    $values = [];
     $api = new RRPProxyClient($params);
     $domain = $params['sld'] . '.' . $params['tld'];
 
@@ -1410,134 +1410,125 @@ function keysystems_TransferSync($params)
         $values['completed'] = true;
     } catch (Exception $ex) {
         try {
-            $transfer = $api->call('StatusDomainTransfer', ['domain' => $params['sld'] . '.' . $params['tld']]);
-            if (strpos($transfer['property']['transferlog'][count($transfer['property']['transferlog']) - 1], "[SUCCESSFUL]")) {
-                $values['completed'] = true;
-            } else {
-                switch (strtolower($transfer['property']['transferstatus'][0])) {
-                    case 'successful':
-                        $values['completed'] = true;
-                        break;
-                    case 'failed':
-                        $values['failed'] = true;
-                        break;
-                }
+            $transfer = $api->call('StatusDomainTransfer', ['domain' => $domain]);
+            if (strtolower($transfer['property']['transferstatus'][0]) == 'failed') {
+                $values['failed'] = true;
+                $values['reason'] = implode("\n", $transfer['property']['transferlog']);
             }
         } catch (Exception $ex) {
-            $values['error'] = $ex->getMessage();
+            $values['error'] = 'StatusDomainTransfer: ' . $ex->getMessage();
+        }
+        return $values;
+    }
+
+    $args = [];
+    $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString();
+
+    $zoneInfo = $api->getZoneInfo($params['tld']);
+    if (!$zoneInfo->renews_on_transfer) {
+        $values['nextduedate'] = $values['expirydate'];
+        $values['nextinvoicedate'] = $values['expirydate'];
+    }
+
+    // Set transferlock
+    if ($params["TransferLock"] == "on") {
+        $args = ['transferlock' => 1];
+    }
+
+    // Set nameservers
+    if ($params["NSUpdTransfer"] == "on") {
+        // Get order
+        $order = DB::table('tblorders as o')
+            ->join('tbldomains as d', 'd.orderid', '=', 'o.id')
+            ->where('d.domain', $domain)
+            ->select('o.userid', 'o.contactid', 'o.nameservers')
+            ->orderBy('o.id', 'DESC')
+            ->first();
+
+        // Set nameservers if defined in order
+        if ($order->nameservers) {
+            $existingNameservers = [];
+            if (isset($result["property"]["nameserver"])) {
+                $existingNameservers = $result["property"]["nameserver"];
+                sort($existingNameservers);
+            }
+
+            $orderNameservers = explode(",", $order->nameservers);
+            sort($orderNameservers);
+
+            $diffNameservers = array_udiff($orderNameservers, $existingNameservers, "strcasecmp");
+            if (count($diffNameservers) > 0) {
+                $i = 0;
+                foreach ($orderNameservers as $nameserver) {
+                    $args["nameserver" . $i++] = $nameserver;
+                }
+            }
         }
     }
 
-    if ($values['completed']) {
-        $args = [];
-        $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString();
+    // Set owner contact if missing
+    $owner_id = $result['property']['ownercontact'][0];
+    if (!$owner_id) {
+        $owner_contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
+            ->where('id', $order->contactid ?: $order->userid)
+            ->select('firstname', 'lastname', 'address1', 'address2', 'city', 'state', 'country', 'postcode', 'phonenumber AS fullphonenumber', 'email', 'companyname')
+            ->first();
 
-        $zoneInfo = $api->getZoneInfo($params['tld']);
-        if (!$zoneInfo->renews_on_transfer) {
-            $values['nextduedate'] = $values['expirydate'];
-            $values['nextinvoicedate'] = $values['expirydate'];
-        }
-
-        // Set transferlock
-        if ($params["TransferLock"] == "on") {
-            $args = ['transferlock' => 1];
-        }
-
-        // Set nameservers
-        if ($params["NSUpdTransfer"] == "on") {
-            // Get order
-            $order = DB::table('tblorders as o')
-                ->join('tbldomains as d', 'd.orderid', '=', 'o.id')
-                ->where('d.domain', $domain)
-                ->select('o.userid', 'o.contactid', 'o.nameservers')
-                ->orderBy('o.id', 'DESC')
-                ->first();
-
-            // Set nameservers if defined in order
-            if ($order->nameservers) {
-                $existingNameservers = [];
-                if (isset($result["property"]["nameserver"])) {
-                    $existingNameservers = $result["property"]["nameserver"];
-                    sort($existingNameservers);
-                }
-
-                $orderNameservers = explode(",", $order->nameservers);
-                sort($orderNameservers);
-
-                $diffNameservers = array_udiff($orderNameservers, $existingNameservers, "strcasecmp");
-                if (count($diffNameservers) > 0) {
-                    $i = 0;
-                    foreach ($orderNameservers as $nameserver) {
-                        $args["nameserver" . $i++] = $nameserver;
-                    }
-                }
+        if ($owner_contact) {
+            if (is_object($owner_contact)) {
+                $owner_contact = get_object_vars($owner_contact);
             }
-        }
-
-        // Set owner contact if missing
-        $owner_id = $result['property']['ownercontact'][0];
-        if (!$owner_id) {
-            $owner_contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
-                ->where('id', $order->contactid ? $order->contactid : $order->userid)
-                ->select('firstname', 'lastname', 'address1', 'address2', 'city', 'state', 'country', 'postcode', 'phonenumber AS fullphonenumber', 'email', 'companyname')
-                ->first();
-
-            if ($owner_contact) {
-                if (is_object($owner_contact)) {
-                    $owner_contact = get_object_vars($owner_contact);
-                }
-                try {
-                    $owner_id = $api->getOrCreateOwnerContact($owner_contact);
-                    $args['ownercontact0'] = $owner_id;
-                } catch (Exception $ex) {
-                    $values['error'] = $ex->getMessage();
-                }
-            }
-        }
-
-        // Set admin/billing/tech contacts
-        if (!\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
-            $admin_contact = [
-                "firstname" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminFirstName"), ENT_QUOTES),
-                "lastname" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminLastName"), ENT_QUOTES),
-                "street" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminAddress1"), ENT_QUOTES),
-                "city" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminCity"), ENT_QUOTES),
-                "state" => html_entity_decode(convertStateToCode(
-                    \WHMCS\Config\Setting::getValue("RegistrarAdminStateProvince"),
-                    \WHMCS\Config\Setting::getValue("RegistrarAdminCountry")
-                ), ENT_QUOTES),
-                "zip" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminPostalCode"), ENT_QUOTES),
-                "country" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminCountry"), ENT_QUOTES),
-                "phone" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminPhone"), ENT_QUOTES),
-                "email" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminEmailAddress"), ENT_QUOTES)
-            ];
-            $companyName = \WHMCS\Config\Setting::getValue("RegistrarAdminCompanyName");
-            if ($companyName) {
-                $admin_contact['organization'] = $companyName;
-            }
-            $street2 = \WHMCS\Config\Setting::getValue("RegistrarAdminAddress2");
-            if (strlen($street2)) {
-                $admin_contact["street"] .= " , " . html_entity_decode($street2, ENT_QUOTES);
-            }
-
             try {
-                $contact_id = $api->getOrCreateContact($admin_contact);
-                $args['admincontact0'] = $params['tld'] == 'it' ? $owner_id : $contact_id;
-                $args['billingcontact0'] = $contact_id;
-                $args['techcontact0'] = $contact_id;
+                $owner_id = $api->getOrCreateOwnerContact($owner_contact);
+                $args['ownercontact0'] = $owner_id;
             } catch (Exception $ex) {
-                $values['error'] = $ex->getMessage();
+                localAPI('LogActivity', ['description' => "[keysystems] getOrCreateOwnerContact on TransferSync failed: {$ex->getMessage()}"]);
             }
         }
+    }
 
-        // Update domain
-        if (count($args) > 0) {
-            try {
-                $args['domain'] = $domain;
-                $api->call('ModifyDomain', $args);
-            } catch (Exception $ex) {
-                $values['error'] = $ex->getMessage();
-            }
+    // Set admin/billing/tech contacts
+    if (!\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
+        $admin_contact = [
+            "firstname" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminFirstName"), ENT_QUOTES),
+            "lastname" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminLastName"), ENT_QUOTES),
+            "street" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminAddress1"), ENT_QUOTES),
+            "city" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminCity"), ENT_QUOTES),
+            "state" => html_entity_decode(convertStateToCode(
+                \WHMCS\Config\Setting::getValue("RegistrarAdminStateProvince"),
+                \WHMCS\Config\Setting::getValue("RegistrarAdminCountry")
+            ), ENT_QUOTES),
+            "zip" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminPostalCode"), ENT_QUOTES),
+            "country" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminCountry"), ENT_QUOTES),
+            "phone" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminPhone"), ENT_QUOTES),
+            "email" => html_entity_decode(\WHMCS\Config\Setting::getValue("RegistrarAdminEmailAddress"), ENT_QUOTES)
+        ];
+        $companyName = \WHMCS\Config\Setting::getValue("RegistrarAdminCompanyName");
+        if ($companyName) {
+            $admin_contact['organization'] = $companyName;
+        }
+        $street2 = \WHMCS\Config\Setting::getValue("RegistrarAdminAddress2");
+        if (strlen($street2)) {
+            $admin_contact["street"] .= " , " . html_entity_decode($street2, ENT_QUOTES);
+        }
+
+        try {
+            $contact_id = $api->getOrCreateContact($admin_contact);
+            $args['admincontact0'] = $params['tld'] == 'it' ? $owner_id : $contact_id;
+            $args['billingcontact0'] = $contact_id;
+            $args['techcontact0'] = $contact_id;
+        } catch (Exception $ex) {
+            localAPI('LogActivity', ['description' => "[keysystems] getOrCreateContact on TransferSync failed: {$ex->getMessage()}"]);
+        }
+    }
+
+    // Update domain
+    if (count($args) > 0) {
+        try {
+            $args['domain'] = $domain;
+            $api->call('ModifyDomain', $args);
+        } catch (Exception $ex) {
+            localAPI('LogActivity', ['description' => "[keysystems] ModifyDomain on TransferSync failed: {$ex->getMessage()}"]);
         }
     }
 

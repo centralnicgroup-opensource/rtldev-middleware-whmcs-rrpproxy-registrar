@@ -13,15 +13,15 @@ async function doLint()
 {
   // these may fail, it's fine
     try {
-        await exec(`${cfg.phpcsfixcmd} ${cfg.phpcsparams}`)
+        await exec(`${cfg.vendorbin}${cfg.phpcsfixcmd} ${cfg.phpcsparams}`)
     } catch (e) {
     }
 
   // these shouldn't fail
     try {
-        await exec(`${cfg.phpcschkcmd} ${cfg.phpcsparams}`)
-        await exec(`${cfg.phpcomptcmd} ${cfg.phpcsparams}`)
-      // await exec(`${cfg.phpstancmd}`);
+        await exec(`${cfg.vendorbin}${cfg.phpcschkcmd} ${cfg.phpcsparams}`)
+        await exec(`${cfg.vendorbin}${cfg.phpcomptcmd} ${cfg.phpcsparams}`)
+        await exec(`${cfg.vendorbin}${cfg.phpstancmd}`);
     } catch (e) {
         await Promise.reject(e.message)
     }

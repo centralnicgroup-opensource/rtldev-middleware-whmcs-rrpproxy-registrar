@@ -28,11 +28,11 @@
         ],
         "codecheck": [
             "@composer update",
-            "phpcs --standard=PSR12 -q -n --colors --ignore=node_modules,vendor,templates_c modules tests"
+            "phpcs --standard=PSR12 -q -n --colors --ignore=node_modules,vendor,templates_c modules resources tests"
         ],
         "codefix": [
             "@composer update",
-            "phpcbf --standard=PSR12 -q --ignore=node_modules,vendor,templates_c modules tests"
+            "phpcbf --standard=PSR12 -q --ignore=node_modules,vendor,templates_c modules resources tests"
         ]
     },
     "require": {

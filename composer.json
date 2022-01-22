@@ -1,0 +1,49 @@
+{
+    "name": "rrpproxy/whmcs-rrpproxy-registrar",
+    "description": "RRPproxy Registrar Module for WHMCS",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sebastian Vassiliou",
+            "email": "sebastian.vassiliou@centralnic.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"WHMCS\\Module\\Registrar\\RRPproxy\\": "modules/registrars/keysystems/lib/"}
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.0"
+        },
+        "vendor-dir": "modules/registrars/keysystems/vendor",
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "phpstan": [
+            "@composer update",
+            "phpstan analyze -c phpstan.neon --memory-limit 2G"
+        ],
+        "codecheck": [
+            "@composer update",
+            "phpcs --standard=PSR12 -q -n --colors --ignore=node_modules,vendor,templates_c modules resources tests"
+        ],
+        "codefix": [
+            "@composer update",
+            "phpcbf --standard=PSR12 -q --ignore=node_modules,vendor,templates_c modules resources tests"
+        ]
+    },
+    "require": {
+        "php": "^7.4",
+        "centralnic-reseller/php-sdk": "^7.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^0.12.66",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
+        "roave/security-advisories": "dev-master",
+        "squizlabs/php_codesniffer": "^3.5",
+        "phpcompatibility/php-compatibility": "^9.3"
+    }
+}

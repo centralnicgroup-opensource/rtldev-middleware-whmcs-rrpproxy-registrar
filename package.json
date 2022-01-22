@@ -40,6 +40,7 @@
   ],
   "devDependencies": {
     "@hexonet/semantic-release-github-whmcs-config": "^2.0.0",
+    "cz-conventional-changelog": "^3.3.0",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
     "gulp-gzip": "^1.4.2",
@@ -48,8 +49,14 @@
     "semantic-release": "^18.0.0"
   },
   "scripts": {
-    "codeCheck": "phpcs --standard=PSR12 -q -n --colors --extensions=php,inc,lib --ignore=node_modules,vendor,templates_c,.github,scripts .",
-    "codeFix": "phpcbf --standard=PSR12 -q --extensions=php,inc,lib --ignore=node_modules,vendor,templates_c,.github,scripts .",
+    "codeCheck": "composer run-script codecheck",
+    "codeFix": "composer run-script codefix",
+    "phpStan": "composer run-script phpstan",
     "phpCompatibility": "./scripts/phpcompatibility.sh"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

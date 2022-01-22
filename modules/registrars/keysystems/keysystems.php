@@ -3,8 +3,8 @@
 /**
  * WHMCS RRPproxy Registrar Module
  *
- * @author Sebastian Vassiliou <svassiliou@hexonet.net>
- * Copyright 2020-2021 Key-Systems GmbH
+ * @author Sebastian Vassiliou <sebastian.vassiliou@centralnic.com>
+ * @copyright 2020-2022 Key-Systems GmbH
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
@@ -23,62 +23,76 @@ if (!defined("WHMCS")) {
 }
 
 use Illuminate\Database\Capsule\Manager as DB;
-use Illuminate\Database\Schema\Blueprint;
 use WHMCS\Carbon;
 use WHMCS\Domain\Registrar\Domain;
+use WHMCS\Domain\TopLevel\ImportItem;
 use WHMCS\Domains\DomainLookup\ResultsList;
 use WHMCS\Domains\DomainLookup\SearchResult;
-use WHMCS\Domain\TopLevel\ImportItem;
-use WHMCS\Module\Registrar\RRPProxy\RRPProxyClient;
+use WHMCS\Module\Registrar\RRPproxy\Commands\AddDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\CheckDomains;
+use WHMCS\Module\Registrar\RRPproxy\Commands\CheckDomainTransfer;
+use WHMCS\Module\Registrar\RRPproxy\Commands\DeleteDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\GetNameSuggestion;
+use WHMCS\Module\Registrar\RRPproxy\Commands\ModifyDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\PushDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\QueryZoneList;
+use WHMCS\Module\Registrar\RRPproxy\Commands\RenewDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\ResendNotification;
+use WHMCS\Module\Registrar\RRPproxy\Commands\SetAuthCode;
+use WHMCS\Module\Registrar\RRPproxy\Commands\StatusContact;
+use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomainTransfer;
+use WHMCS\Module\Registrar\RRPproxy\Commands\TradeDomain;
+use WHMCS\Module\Registrar\RRPproxy\Commands\TransferDomain;
+use WHMCS\Module\Registrar\RRPproxy\Features\Contact;
+use WHMCS\Module\Registrar\RRPproxy\Features\DNSZone;
+use WHMCS\Module\Registrar\RRPproxy\Features\MailFwd;
+use WHMCS\Module\Registrar\RRPproxy\Features\Nameserver;
+use WHMCS\Module\Registrar\RRPproxy\Helpers\Order;
+use WHMCS\Module\Registrar\RRPproxy\Helpers\Pricing;
+use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
+use WHMCS\Module\Registrar\RRPproxy\Migrator;
+use WHMCS\Module\Registrar\RRPproxy\Updater;
 
-define("RRPPROXY_VERSION", "0.12.1");
+const RRPPROXY_VERSION = "0.12.1";
 
-require_once __DIR__ . '/lib/RRPProxyClient.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
-function keysystems_getConfigArray($params)
+/**
+ * @param array<string, mixed> $params
+ * @return array<string, mixed>
+ */
+function keysystems_getConfigArray(array $params): array
 {
     $msgUpdate = '';
     $msgMigrate = '';
-    $msgRegister = "Don't have a RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>";
+    $msgRegister = "Don't have an RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>";
 
     static $dbChecked = false;
 
     if (isset($params['Username'])) {
         if (!$dbChecked) {
-            if (DB::schema()->hasTable('mod_rrpproxy_zones') && !DB::schema()->hasColumn('mod_rrpproxy_zones', 'supports_renewals')) {
-                DB::schema()->drop('mod_rrpproxy_zones');
-            }
-
-            if (!DB::schema()->hasTable('mod_rrpproxy_zones')) {
-                DB::schema()->create('mod_rrpproxy_zones', function (Blueprint $table) {
-                    $table->bigIncrements('id');
-                    $table->string('zone', 45);
-                    $table->string('periods', 50);
-                    $table->integer('grace_days')->nullable();
-                    $table->integer('redemption_days')->nullable();
-                    $table->boolean('epp_required');
-                    $table->boolean('id_protection');
-                    $table->boolean('supports_renewals');
-                    $table->boolean('renews_on_transfer');
-                    $table->boolean('handle_updatable');
-                    $table->boolean('needs_trade');
-                    $table->timestamps();
-                    $table->unique('zone');
-                });
-                $mod_rrpproxy_zones = [];
-                include_once __DIR__ . '/sql/mod_rrpproxy_zones.php';
-                DB::table('mod_rrpproxy_zones')->insert($mod_rrpproxy_zones);
-                DB::table('mod_rrpproxy_zones')->update(['created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
-            }
+            ZoneInfo::initDb();
             $dbChecked = true;
         }
         if (@$_GET['migrate']) {
-            keysystems_migrateFromStockModule($params);
+            Migrator::migrate($params);
         }
         if (!$params['Username'] && DB::table('tblregistrars')->where('registrar', 'rrpproxy')->exists()) {
             $msgMigrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-primary' title='Click here to automatically migrate domains and TLD prices related to RRPproxy to this module!'>Migrate from old RRPproxy module</a>";
         }
-        $msgUpdate = keysystems_checkForUpdates();
+        $updateStatus = Updater::check();
+        switch ($updateStatus) {
+            case -1:
+                $msgUpdate = '<br /><i class="fas fa-times-circle"></i> Unable to check for updates';
+                break;
+            case 1:
+                $msgUpdate = '<br /><i class="fas fa-exclamation-circle"></i> Update available! ';
+                $msgUpdate .= '<a class="btn btn-default btn-sm" href="https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases" target="_blank"><i class="fab fa-github"></i> Get it on GitHub</a>';
+                break;
+            default:
+                $msgUpdate = '<br /><i class="fas fa-check-circle"></i> You are up to date!';
+        }
     }
 
     return [
@@ -157,95 +171,45 @@ function keysystems_getConfigArray($params)
             'Type' => 'password',
             'Size' => '25',
             'Description' => 'Enter your RRPproxy OT&amp;E Password',
+        ],
+        "ProxyServer" => [
+            "FriendlyName" => "Proxy Server",
+            "Type" => "text",
+            "Description" => "HTTP(S) Proxy Server (Optional)"
         ]
     ];
 }
 
 /**
- * Migrates module config and domains from the WHMCS stock rrpproxy module to this one
- * @param array $params
+ * @param array<string, mixed> $params
+ * @return Domain
+ * @throws Exception
  */
-function keysystems_migrateFromStockModule(array $params): void
+function keysystems_GetDomainInformation(array $params): Domain
 {
-    $oldModule = 'rrpproxy';
-    $newModule = 'keysystems';
-    $oldConfig = DB::table('tblregistrars')
-        ->where('registrar', $oldModule)
-        ->pluck('value', 'setting');
-    if ($oldConfig) {
-        // This is needed for WHMCS v8 compatibility
-        if ((int) $params['whmcsVersion'][0] >= 8) {
-            $oldConfig = $oldConfig->toArray();
-        }
-        $oldConfig['TestPassword'] = $oldConfig['Password'];
-        foreach ($oldConfig as $key => $val) {
-            DB::table('tblregistrars')
-                ->where('registrar', $newModule)
-                ->where('setting', $key)
-                ->update(['value' => $val]);
-        }
-    }
-    DB::table('tbldomains')->where('registrar', $oldModule)->update(['registrar' => $newModule]);
-    DB::table('tbldomainpricing')->where('autoreg', $oldModule)->update(['autoreg' => $newModule]);
-    DB::table('tblregistrars')->where('registrar', $oldModule)->delete();
-    $reloadLink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]?saved=true#keysystems";
-    header("Location: $reloadLink");
-}
-
-/**
- * @return string
- */
-function keysystems_checkForUpdates(): string
-{
-    $data = file_get_contents('https://raw.githubusercontent.com/rrpproxy/whmcs-rrpproxy-registrar/master/release.json');
-    if (!$data) {
-        $msgUpdate = '<br /><i class="fas fa-times-circle"></i> Unable to check for updates';
-    } else {
-        $json = json_decode($data);
-        if (version_compare(RRPPROXY_VERSION, $json->version, '<')) {
-            $msgUpdate = '<br /><i class="fas fa-exclamation-circle"></i> Update available! ';
-            $msgUpdate .= '<a class="btn btn-default btn-sm" href="https://github.com/rrpproxy/whmcs-rrpproxy-registrar/releases" target="_blank"><i class="fab fa-github"></i> Get it on GitHub</a>';
-        } else {
-            $msgUpdate = '<br /><i class="fas fa-check-circle"></i> You are up to date!';
-        }
-    }
-    return $msgUpdate;
-}
-
-function keysystems_GetDomainInformation(array $params)
-{
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
-    $result = $api->call("StatusDomain", ["domain" => $domainName]);
-
-    $nameservers = [];
-    $i = 1;
-    foreach ($result["property"]["nameserver"] as $nameserver) {
-        $nameservers["ns" . $i] = $nameserver;
-        $i++;
-    }
+    $domainStatus = new StatusDomain($params);
 
     $domain = new Domain();
     $domain->setIsIrtpEnabled(true);
-    $domain->setDomain($result["property"]["domain"][0]);
-    $domain->setNameservers($nameservers);
-    $domain->setTransferLock($result["property"]["transferlock"][0]);
-    $domain->setExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s.u", $result["property"]["registrationexpirationdate"][0]));
+    $domain->setDomain($domainStatus->domainName);
+    $domain->setNameservers($domainStatus->nameServers);
+    $domain->setTransferLock($domainStatus->transferLock);
+    $domain->setExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s.u", $domainStatus->expirationDate));
 
     //check contact status
     try {
-        $contact = $api->call("StatusContact", ["contact" => $result["property"]["ownercontact"][0]]);
-        $domain->setRegistrantEmailAddress($contact["property"]["email"][0]);
-        if ($contact["property"]["verificationrequested"][0] == 1 && $contact["property"]["verified"][0] == 0) {
+        $contactStatus = new StatusContact($params, $domainStatus->ownerContact);
+        $domain->setRegistrantEmailAddress($contactStatus->email);
+        if ($contactStatus->verificationRequested && !$contactStatus->verified) {
             $domain->setDomainContactChangePending(true);
         }
     } catch (Exception $ex) {
         // we suffer in silence...
     }
 
-    if (isset($result["property"]["x-time-to-suspension"][0])) {
+    if ($domainStatus->timeToSuspension) {
         $domain->setPendingSuspension(true);
-        $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s", $result["property"]["x-time-to-suspension"][0]));
+        $domain->setDomainContactChangeExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s", $domainStatus->timeToSuspension));
     }
     $domain->setIrtpVerificationTriggerFields([
         "Registrant" => [
@@ -255,76 +219,51 @@ function keysystems_GetDomainInformation(array $params)
             "Email",
         ]
     ]);
-    // -- addons
-    // email forwardings
-    $forwardings = keysystems_GetEmailForwarding($params);
-    $domain->setEmailForwardingStatus(
-        !isset($forwardings["error"])
-            && !empty($forwardings)
-    );
+
+    // email forwarding
+    try {
+        $forwarding = new MailFwd($params);
+        $domain->setEmailForwardingStatus(!empty($forwarding->values));
+    } catch (Exception $ex) {
+        $domain->setEmailForwardingStatus(false);
+    }
+
     // dns management
     try {
-        $response = $api->call("CheckDNSZone", [
-            "dnszone" => $domainName
-        ]);
+        $dnsManagement = new DNSZone($params);
+        $domain->setDnsManagementStatus($dnsManagement->exists());
     } catch (Exception $ex) {
-        $response["code"] = 0;
+        $domain->setDnsManagementStatus(false);
     }
-    $domain->setDnsManagementStatus($response["code"] != 210);
 
     // id protection
-    $domain->setIdProtectionStatus(
-        isset($result["property"]["x-whois-privacy"][0])
-            && $result["property"]["x-whois-privacy"][0] > 0
-    );
-
-    // add custom data (for import purposes)
-    // registrant vatid
-    $vatid = "";
-    $keys = array_keys($result["property"]);
-    $pnames = preg_grep(
-        "/admin|tech|billing/",
-        preg_grep(
-            "/vatid/",
-            $keys
-        ),
-        PREG_GREP_INVERT
-    );
-    foreach ($pnames as $prop) {
-        if (!empty($result["property"][$prop][0])) {
-            $vatid = $result["property"][$prop][0];
-            break;
-        }
-    }
-    // trustee service detection
-    $isTrusteeUsed = 0;
-    $pnames = preg_grep("/^x-.+-accept-trustee-tac$/i", $keys);
-    if (!empty($pnames)) {
-        $isTrusteeUsed = 1;
-    }
+    $domain->setIdProtectionStatus($domainStatus->idProtection);
 
     // set custom data
     $domain->registrarData = [
-        "isPremium" => (int) (isset($result["property"]["x-fee-class"][0])
-            && $result["property"]["x-fee-class"][0] === "premium"),
-        "isTrusteeUsed" => $isTrusteeUsed,
-        "registrantTaxId" => $vatid,
-        "createdDate" => $result["property"]["createddate"][0]
+        "isPremium" => (int) $domainStatus->isPremium,
+        "isTrusteeUsed" => $domainStatus->isTrusteeUsed,
+        "registrantTaxId" => $domainStatus->vatId,
+        "createdDate" => $domainStatus->creationDate
         //"domainfields" => ... TODO
     ];
 
     return $domain;
 }
 
-function keysystems_ResendIRTPVerificationEmail(array $params)
+/**
+ * Resend contact verification e-mail to owner
+ * @param array<string, mixed> $params
+ * @return array<string, mixed>
+ */
+function keysystems_ResendIRTPVerificationEmail(array $params): array
 {
     try {
-        $domain = keysystems_GetDomainInformation($params);
-        $api = new RRPProxyClient($params);
-        $api->call('ResendNotification', ['type' => 'CONTACTVERIFICATION', 'object' => (string)$domain->getRegistrantEmailAddress()]);
-        return ['success' => true];
+        $verify = new ResendNotification($params);
+        $verify->execute();
+        return ["success" => true];
     } catch (Exception $ex) {
-        return ['error' => $ex->getMessage()];
+        return ["error" => $ex->getMessage()];
     }
 }
 
@@ -338,67 +277,17 @@ function keysystems_ResendIRTPVerificationEmail(array $params)
  * * When a pending domain registration order is accepted
  * * Upon manual request by an admin user
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
+ * @throws Exception
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_RegisterDomain($params)
+function keysystems_RegisterDomain(array $params): array
 {
     $params = injectDomainObjectIfNecessary($params);
-    $domainName = $params["sld"] . "." . $params["tld"];
-
-    if ($params['tld'] == 'it' && $params['additionalfields']['Legal Type'] == 'Italian and foreign natural persons') {
-        $params['companyname'] = '';
-    }
-
-    // Create contacts if not existing and get contact handle
+    $register = new AddDomain($params);
     try {
-        $api = new RRPProxyClient($params);
-        $contact_id = $api->getOrCreateOwnerContact($params);
-        $admin_contact_id = $api->getOrCreateAdminContact($params);
-    } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
-    }
-
-    // Loading custom RRPproxy TLD Extensions
-    $extensions = [];
-    $domainApplication = false;
-    $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", $params["domainObj"]->getLastTLDSegment() . ".php"]);
-    if (file_exists($extensions_path)) {
-        require_once $extensions_path;
-    }
-
-    $fields = [
-        'domain' => $domainName,
-        'period' => $params['regperiod'],
-        'transferlock' => ($params["TransferLock"] == "on") ? 1 : 0,
-        'ownercontact0' => $contact_id,
-        'admincontact0' => $admin_contact_id,
-        'techcontact0' => $admin_contact_id,
-        'billingcontact0' => $admin_contact_id,
-        'nameserver0' => $params['ns1'],
-        'nameserver1' => $params['ns2']
-    ];
-    if (!empty($params['ns3'])) {
-        $fields['nameserver2'] = $params['ns3'];
-    }
-    if (!empty($params['ns4'])) {
-        $fields['nameserver3'] = $params['ns4'];
-    }
-    if (!empty($params['ns5'])) {
-        $fields['nameserver4'] = $params['ns5'];
-    }
-    if ($params['idprotection'] && !$params['TestMode']) {
-        $fields['X-WHOISPRIVACY'] = 1;
-    }
-    $request = array_merge($fields, $extensions);
-
-    //Register the domain name
-    try {
-        $api = new RRPProxyClient($params);
-        $api->call($domainApplication ? 'AddDomainApplication' : 'AddDomain', $request);
+        $register->execute();
         return ['success' => true];
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
@@ -415,109 +304,27 @@ function keysystems_RegisterDomain($params)
  * * When a pending domain transfer order is accepted
  * * Upon manual request by an admin user
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_TransferDomain($params)
+function keysystems_TransferDomain(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-
         // Domain transfer pre-check (apparently only for com/net/jobs/org/bin/info/name/mobi)
-        $data = ["DOMAIN" => $domainName];
-        if ($params["eppcode"]) {
-            $data["AUTH"] = $params["eppcode"];
-        }
-        $check = $api->call("CheckDomainTransfer", $data);
-        if ($check["code"] !== "218") {
-            return ["error" => $check["description"]];
-        }
-        //        if (isset($check["property"]["authisvalid"]) && $check["property"]["authisvalid"][0] === "NO") {
-        //            return ["error" => "Invaild Authorization Code"];
-        //        }
-        //        if (isset($check["property"]["transferlock"]) && $check["property"]["transferlock"][0] === "1") {
-        //            return ["error" => "Transferlock is active. Therefore the Domain cannot be transferred."];
-        //        }
-
-        // Get zone features
-        $zoneInfo = $api->getZoneInfo($params["tld"]);
-
-        // Determine Nameservers
-        $ns = [];
-        foreach ($params as $key => $n) {
-            if (preg_match("/^ns([0-9]+)$/", $key, $m)) {
-                $ns[(int)$m[1] - 1] = $n;
-            }
+        $check = new CheckDomainTransfer($params);
+        $check->execute();
+        if (!$check->wasSuccessful()) {
+            return ["error" => $check->getErrors()];
         }
 
-        // Prepare domain transfer
-        $data = [
-            "domain" => $domainName,
-            "action" => "REQUEST",
-            "period" => $params["regperiod"],
-            "auth" => $params["eppcode"],
-            "transferlock" => 1,
-            "forcerequest" => 1 // TODO what does this do?
-        ];
-        foreach ($ns as $i => $nsx) {
-            $data["nameserver" . $i] = $nsx;
+        $transfer = new TransferDomain($params);
+        if ($check->userTransferRequired) {
+            $transfer->api->args["ACTION"] = "USERTRANSFER";
         }
-
-        // Handle domains that require trade
-        if ($zoneInfo->requires_trade) {
-            $data["accept-trade"] = 1;
-        }
-
-        // Handle domains with free transfers
-        if (!$zoneInfo->renews_on_transfer) {
-            unset($data["period"]);
-        }
-
-        // Detect user-transfer
-        //        if (isset($check["property"]["usertransferrequired"]) && $check["property"]["usertransferrequired"][0] === "1") {
-        //            $data["ACTION"] = "USERTRANSFER";
-        //        }
-
-        // Handle contacts
-        $isAfnic = preg_match("/\.(fr|pm|re|tf|wf|yt)$/i", $domainName);
-        $isAu = preg_match("/\.au$/i", $domainName);
-        $isCaUs = preg_match("/\.(ca|us)$/i", $domainName);
-        if ($isAfnic || $isAu || (!$isCaUs && !$zoneInfo->needs_trade)) {
-            $contactId = $api->getOrCreateOwnerContact($params);
-            if (!$isAfnic) {
-                $data["ownercontact0"] = $contactId;
-                $data["billingcontact0"] = $contactId;
-            }
-            $data["admincontact0"] = $contactId;
-            $data["techcontact0"] = $contactId;
-        }
-
-        // Handle additional fields
-        $tld = explode('.', $params["tld"]);
-        $tld = end($tld);
-        $extensions = [];
-        $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", "$tld.php"]);
-        if (file_exists($extensions_path)) {
-            require_once $extensions_path;
-            foreach ($extensions as $key => $val) {
-                $data[$key] = $val;
-            }
-            if (preg_match("/\.(ca|ro)$/i", $domainName)) {
-                unset($data["X-CA-DISCLOSE"]); // not supported for transfers
-            }
-            if (preg_match("/\.ngo$/i", $domainName)) {
-                unset($data["X-NGO-ACCEPT-REGISTRATION-TAC"]); // not supported for transfers
-            }
-        }
-
-        // Execute domain transfer
-        $transfer = $api->call("TransferDomain", $data);
-        if ($transfer["code"] !== "200") {
-            return ["error" => $transfer["description"]];
+        $transfer->execute();
+        if (!empty($transfer->getErrors())) {
+            return ["error" => $transfer->getErrors()];
         }
         return ["success" => true];
     } catch (Exception $e) {
@@ -535,25 +342,15 @@ function keysystems_TransferDomain($params)
  * * When a pending domain renewal order is accepted
  * * Upon manual request by an admin user
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_RenewDomain($params)
+function keysystems_RenewDomain(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
-
     try {
-        $domain = WHMCS\Domain\Domain::find($params['domainid']);
-        $zoneInfo = $api->getZoneInfo($params["domainObj"]->getLastTLDSegment());
-        if (!$zoneInfo->supports_renewals) {
-            $api->call('SetDomainRenewalMode', ['domain' => $domainName, 'renewalmode' => 'RENEWONCE']);
-        } else {
-            $api->call('RenewDomain', ['domain' => $domainName, 'period' => $params["regperiod"], 'expiration' => $domain->expirydate->year]);
-        }
+        $renew = new RenewDomain($params);
+        $renew->execute();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -565,33 +362,15 @@ function keysystems_RenewDomain($params)
  *
  * This function should return an array of nameservers for a given domain.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_GetNameservers($params)
+function keysystems_GetNameservers(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-        $result = $api->call('StatusDomain', ['domain' => $domainName]);
-
-        $values = [
-            'ns1' => $result['property']['nameserver'][0],
-            'ns2' => $result['property']['nameserver'][1]
-        ];
-        if (isset($result['property']['nameserver'][2])) {
-            $values['ns3'] = $result['property']['nameserver'][2];
-        }
-        if (isset($result['property']['nameserver'][3])) {
-            $values['ns4'] = $result['property']['nameserver'][3];
-        }
-        if (isset($result['property']['nameserver'][4])) {
-            $values['ns5'] = $result['property']['nameserver'][4];
-        }
-        return $values;
+        $domain = new StatusDomain($params);
+        return $domain->nameServers;
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
@@ -603,26 +382,16 @@ function keysystems_GetNameservers($params)
  * This function should submit a change of nameservers request to the
  * domain registrar.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_SaveNameservers($params)
+function keysystems_SaveNameservers(array $params): array
 {
-    $fields = [
-        'domain' => $params['sld'] . '.' . $params['tld'],
-        'nameserver0' => $params['ns1'],
-        'nameserver1' => $params['ns2'],
-        'nameserver2' => $params['ns3'],
-        'nameserver3' => $params['ns4'],
-        'nameserver4' => $params['ns5'],
-    ];
-
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('ModifyDomain', $fields);
+        $domain = new ModifyDomain($params);
+        $domain->setNameServers();
+        $domain->execute();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -635,35 +404,26 @@ function keysystems_SaveNameservers($params)
  * Should return a multi-level array of the contacts and name/address
  * fields that be modified.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_GetContactDetails($params)
+function keysystems_GetContactDetails(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-        $response = $api->call('StatusDomain', ['domain' => $domainName]);
+        $domain = new StatusDomain($params);
 
-        $owner_id = $response["property"]["ownercontact"][0];
-        $admin_id = $response["property"]["admincontact"][0];
-        $bill_id = $response["property"]["billingcontact"][0];
-        $tech_id = $response["property"]["techcontact"][0];
-
-        $contacts['Registrant'] = $api->getContactInfo($owner_id);
+        $contacts['Registrant'] = Contact::getContactInfo($domain->ownerContact, $params);
 
         if (\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
-            if ($admin_id) {
-                $contacts['Admin'] = $api->getContactInfo($admin_id);
+            if ($domain->adminContact) {
+                $contacts['Admin'] = Contact::getContactInfo($domain->adminContact, $params);
             }
-            if ($bill_id) {
-                $contacts['Billing'] = $api->getContactInfo($bill_id);
+            if ($domain->billingContact) {
+                $contacts['Billing'] = Contact::getContactInfo($domain->billingContact, $params);
             }
-            if ($tech_id) {
-                $contacts['Tech'] = $api->getContactInfo($tech_id);
+            if ($domain->techContact) {
+                $contacts['Tech'] = Contact::getContactInfo($domain->techContact, $params);
             }
         }
 
@@ -680,71 +440,61 @@ function keysystems_GetContactDetails($params)
  * Receives an array matching the format provided via the `GetContactDetails`
  * method with the values from the users input.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
+ * @throws Exception
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_SaveContactDetails($params)
+function keysystems_SaveContactDetails(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     $values = [];
-    $args = [];
 
     try {
-        $api = new RRPProxyClient($params);
-        $response = $api->call('StatusDomain', ['domain' => $domainName]);
+        $statusDomain = new StatusDomain($params);
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
 
-    $owner_id = $response['property']['ownercontact'][0];
-    $admin_id = $response['property']['admincontact'][0];
-    $bill_id = $response['property']['billingcontact'][0];
-    $tech_id = $response['property']['techcontact'][0];
+    $owner_id = $statusDomain->api->properties['OWNERCONTACT'][0];
+    $admin_id = $statusDomain->api->properties['ADMINCONTACT'][0];
+    $bill_id = $statusDomain->api->properties['BILLINGCONTACT'][0];
+    $tech_id = $statusDomain->api->properties['TECHCONTACT'][0];
 
-    $zoneInfo = $api->getZoneInfo($params['tld']);
+    $modifyDomain = new ModifyDomain($params);
+    $zoneInfo = ZoneInfo::get($params);
 
-    $contact_id = $api->updateContact($zoneInfo->handle_updatable, $owner_id, $params['contactdetails']['Registrant']);
+    $contact_id = Contact::updateContact($zoneInfo->handle_updatable, $owner_id, $params['contactdetails']['Registrant'], $params);
     if ($contact_id != null) {
-        $args['ownercontact0'] = $contact_id;
+        $modifyDomain->setOwnerContact($contact_id);
     }
     if (\WHMCS\Config\Setting::getValue('RegistrarAdminUseClientDetails')) {
         if ($admin_id) {
-            $contact_id = $api->updateContact($zoneInfo->handle_updatable, $admin_id, $params['contactdetails']['Admin']);
+            $contact_id = Contact::updateContact($zoneInfo->handle_updatable, $admin_id, $params['contactdetails']['Admin'], $params);
             if ($contact_id != null) {
-                $args['admincontact0'] = $contact_id;
+                $modifyDomain->setAdminContact($contact_id);
             }
         }
         if ($bill_id) {
-            $contact_id = $api->updateContact($zoneInfo->handle_updatable, $bill_id, $params['contactdetails']['Billing']);
+            $contact_id = Contact::updateContact($zoneInfo->handle_updatable, $bill_id, $params['contactdetails']['Billing'], $params);
             if ($contact_id != null) {
-                $args['billingcontact0'] = $contact_id;
+                $modifyDomain->setBillingContact($contact_id);
             }
         }
         if ($tech_id) {
-            $contact_id = $api->updateContact($zoneInfo->handle_updatable, $tech_id, $params['contactdetails']['Tech']);
+            $contact_id = Contact::updateContact($zoneInfo->handle_updatable, $tech_id, $params['contactdetails']['Tech'], $params);
             if ($contact_id != null) {
-                $args['techcontact0'] = $contact_id;
+                $modifyDomain->setTechContact($contact_id);
             }
         }
     }
 
     try {
-        if ($args && $zoneInfo->needs_trade && $args['ownercontact0']) {
-            $tradeParams['domain'] = $domainName;
-            $tradeParams = ['ownercontact0' => $args['ownercontact0']];
-            if ($params['tld'] == "swiss") {
-                $tradeParams['X-SWISS-UID'] = $params['additionalfields']['UID'];
-            }
-            $api->call('TradeDomain', $tradeParams);
-            unset($args['ownercontact0']);
+        if (count($modifyDomain->api->args) > 1 && $zoneInfo->needs_trade && $modifyDomain->api->args['OWNERCONTACT0']) {
+            $tradeDomain = new TradeDomain($params, $modifyDomain->api->args['OWNERCONTACT0']);
+            $tradeDomain->execute();
+            unset($modifyDomain->api->args['OWNERCONTACT0']);
         }
-        if ($args) {
-            $args['domain'] = $domainName;
-            $api->call('ModifyDomain', $args);
-        }
+        $modifyDomain->execute();
     } catch (Exception $ex) {
         $values['error'] = $ex->getMessage();
     }
@@ -758,44 +508,26 @@ function keysystems_SaveContactDetails($params)
  * Determine if a domain or group of domains are available for
  * registration or transfer.
  *
- * @param array $params common module parameters
- * @return ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, string>|ResultsList<SearchResult> An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
  * @throws Exception Upon domain availability check failure.
- *
  * @see \WHMCS\Domains\DomainLookup\ResultsList
- *
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  * @see \WHMCS\Domains\DomainLookup\SearchResult
  */
-function keysystems_CheckAvailability($params)
+function keysystems_CheckAvailability(array $params)
 {
     // TODO need to implement PREMIUM DOMAINS
     try {
-        $api = new RRPProxyClient($params);
-
-        if ($params['isIdnDomain'] && !empty($params['punyCodeSearchTerm'])) {
-            $searchTerm = strtolower($params['punyCodeSearchTerm']);
-        } else {
-            $searchTerm = strtolower($params['searchTerm']);
-        }
-
         $tldsToInclude = $params['tldsToInclude'];
         $results = new ResultsList();
 
         foreach (array_chunk($tldsToInclude, 32) as $tlds) {
-            $domains = [];
-            $searchResults = [];
+            $checkDomains = new CheckDomains($params, $tlds);
+            $checkDomains->execute();
             $i = 0;
-            foreach ($tlds as $tld) {
-                $domains['domain' . $i] = $searchTerm . $tld;
-                $searchResults[$i] = new SearchResult($searchTerm, $tld);
-                $i++;
-            }
-            $result = $api->call('CheckDomains', $domains);
-            $i = 0;
-            foreach ($searchResults as $searchResult) {
-                switch (substr($result['property']['domaincheck'][$i++], 0, 3)) {
+            foreach ($checkDomains->getResults() as $searchResult) {
+                switch (substr($checkDomains->api->properties["DOMAINCHECK"][$i++], 0, 3)) {
                     case 210:
                         $status = SearchResult::STATUS_NOT_REGISTERED;
                         break;
@@ -820,26 +552,23 @@ function keysystems_CheckAvailability($params)
  *
  * Provide domain suggestions based on the domain lookup term provided.
  *
- * @param array $params common module parameters
- * @return ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, string>|ResultsList<SearchResult> An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
  * @throws Exception Upon domain suggestions check failure.
- *
  * @see \WHMCS\Domains\DomainLookup\ResultsList
- *
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  * @see \WHMCS\Domains\DomainLookup\SearchResult
  */
-function keysystems_GetDomainSuggestions($params)
+function keysystems_GetDomainSuggestions(array $params)
 {
     // TODO need to implement PREMIUM DOMAINS
     try {
-        $api = new RRPProxyClient($params);
-        $response = $api->call('GetNameSuggestion', ['name' => $params['searchTerm'], 'show-unavailable' => 0]);
+        $getNameSuggestion = new GetNameSuggestion($params);
+        $getNameSuggestion->execute();
         $results = new ResultsList();
-        foreach ($response['property']['name'] as $key => $domain) {
+        foreach ($getNameSuggestion->api->properties["NAME"] as $key => $domain) {
             $d = explode('.', $domain, 2);
-            if ($response['property']['availability'][$key] == 'available') {
+            if ($getNameSuggestion->api->properties["AVAILABILITY"][$key] == 'available') {
                 $searchResult = new SearchResult($d[0], $d[1]);
                 $searchResult->setStatus(SearchResult::STATUS_NOT_REGISTERED);
                 $results->append($searchResult);
@@ -856,23 +585,15 @@ function keysystems_GetDomainSuggestions($params)
  *
  * Also known as Domain Lock or Transfer Lock status.
  *
- * @param array $params common module parameters
- *
- * @return string|array Lock status or error message
+ * @param array<string, mixed> $params common module parameters
+ * @return string|array<string, string> Lock status or error message
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_GetRegistrarLock($params)
+function keysystems_GetRegistrarLock(array $params)
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-        $result = $api->call('StatusDomain', ['domain' => $domainName]);
-        if ($result['property']['transferlock'][0] == 0) {
-            return "unlocked";
-        } else {
-            return "locked";
-        }
+        $domain = new StatusDomain($params);
+        return $domain->transferLock ? "locked" : "unlocked";
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
@@ -881,18 +602,16 @@ function keysystems_GetRegistrarLock($params)
 /**
  * Set registrar lock status.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_SaveRegistrarLock($params)
+function keysystems_SaveRegistrarLock(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('ModifyDomain', ['domain' => $domainName, 'transferlock' => ($params['lockenabled'] == 'locked') ? 1 : 0]);
+        $domain = new ModifyDomain($params);
+        $domain->setRegistrarLock();
+        $domain->execute();
         return ['success' => 'success'];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -902,67 +621,15 @@ function keysystems_SaveRegistrarLock($params)
 /**
  * Get DNS Records for DNS Host Record Management.
  *
- * @param array $params common module parameters
- *
- * @return array DNS Host Records
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed> DNS Host Records
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_GetDNS($params)
+function keysystems_GetDNS(array $params): array
 {
-    $values = [];
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
-
     try {
-        $response = $api->call('CheckDNSZone', ['dnszone' => $domainName]);
-        $zoneExists = ($response['code'] == 210);
-    } catch (Exception $ex) {
-        return ['error' => $ex->getMessage()];
-    }
-
-    if (!$zoneExists) {
-        try {
-            $api->call('AddDNSZone', ['dnszone' => $domainName]);
-            $fields = [
-                'domain' => $domainName,
-                'nameserver0' => "ns1.dnsres.net",
-                'nameserver1' => "ns2.dnsres.net",
-                'nameserver2' => "ns3.dnsres.net",
-                'nameserver3' => "",
-                'nameserver4' => ""
-            ];
-            $api->call('ModifyDomain', $fields);
-        } catch (Exception $ex) {
-            return ['error' => $ex->getMessage()];
-        }
-    }
-
-    try {
-        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $domainName, 'wide' => 1]);
-        $webForwards = [];
-        for ($i = 0; $i < $response['property']['count'][0]; $i++) {
-            $name = $response['property']['name'][$i];
-            $type = $response['property']['type'][$i];
-            $content = $response['property']['content'][$i];
-            $priority = $response['property']['prio'][$i];
-            $source = ($name == "@") ? $domainName : $name . "." . $domainName;
-
-            if ($response['property']['locked'][$i] == 1) {
-                $forward = $api->call('QueryWebFwdList', ['source' => $source, 'wide' => 1]);
-                if ($forward['property']['total'][0] > 0 && !in_array($name, $webForwards)) {
-                    $webForwards[] = $name;
-                    $values[] = ['hostname' => $name, 'type' => $forward['property']['type'][0] == "rd" ? "URL" : "FRAME", 'address' => $forward['property']['target'][0]];
-                }
-                continue;
-            }
-            if ($type == 'MX' &&  $content == $priority) {
-                continue;
-            }
-
-            $values[] = ['hostname' => $name, 'type' => $type, 'address' => $content, 'priority' => $priority];
-        }
-        return $values;
+        $dns = new DNSZone($params);
+        return $dns->get();
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
@@ -971,217 +638,69 @@ function keysystems_GetDNS($params)
 /**
  * Update DNS Host Records.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_SaveDNS($params)
+function keysystems_SaveDNS(array $params): array
 {
-    $values = [];
-    $oldZone = [];
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
-
     try {
-        $response = $api->call('QueryDNSZoneRRList', ['dnszone' => $domainName, 'orderby' => "type", 'wide' => 1]);
-
-        for ($i = 0; $i < $response['property']['count'][0]; $i++) {
-            $name = $response['property']['name'][$i];
-            $type = $response['property']['type'][$i];
-            $content = $response['property']['content'][$i];
-            $priority = $response['property']['prio'][$i];
-            $source = ($name == "@") ? $domainName : $name . "." . $domainName;
-
-            if ($response['property']['locked'][$i] == 1) {
-                $forward = $api->call('QueryWebFwdList', ['source' => $source, 'wide' => 1]);
-                if ($forward['property']['total'][0] > 0) {
-                    $api->call('DeleteWebFwd', ['source' => $source]);
-                }
-                continue;
-            }
-
-            if ($type == 'MX' && $content == $priority) {
-                continue;
-            }
-
-            $values = [$name, $response['property']['ttl'][$i], 'IN', $type, $content, $priority];
-            if ($priority) {
-                unset($values[5]);
-            }
-            if ($type == 'NS') {
-                unset($values[2]);
-            }
-            $oldZone[] = implode(' ', $values);
-        }
-
-        $zone = [];
-        $ttl = is_numeric($params['DefaultTTL']) ? $params['DefaultTTL'] : 28800;
-        foreach ($params['dnsrecords'] as $record) {
-            if (!$record['address']) {
-                continue;
-            }
-            if (!$record['hostname'] || $record['hostname'] == $domainName) {
-                $record['hostname'] = "@";
-            }
-
-            switch ($record['type']) {
-                case "URL":
-                case "FRAME":
-                    $source = $record['hostname'] == "@" ? $domainName : $record['hostname'] . '.' . $domainName;
-                    $type = ($record['type'] == "URL") ? "RD" : "MRD";
-                    $api->call('AddWebFwd', ['source' => $source, 'target' => $record['address'], 'type' => $type]);
-                    break;
-                case "MX":
-                case "SRV":
-                    $zone[] = sprintf("%s %s IN %s %s %s", $record['hostname'], $ttl, $record['type'], $record['priority'], $record['address']);
-                    break;
-                case "NS":
-                    $zone[] = sprintf("%s %s %s %s", $record['hostname'], $ttl, $record['type'], $record['address']);
-                    break;
-                default:
-                    $zone[] = sprintf("%s %s IN %s %s", $record['hostname'], $ttl, $record['type'], $record['address']);
-            }
-        }
-
-        $fields = ['dnszone' => $domainName];
-        $i = 0;
-        foreach ($oldZone as $record) {
-            $fields['DELRR' . $i++] = $record;
-        }
-        $i = 0;
-        foreach ($zone as $record) {
-            $fields['ADDRR' . $i++] = $record;
-        }
-        $api->call('ModifyDNSZone', $fields);
+        $dns = new DNSZone($params);
+        $dns->save();
+        return [];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
     }
-
-    return $values;
 }
 
 /**
  * Get Email Forwardings
  *
- * @param array $params common module parameters
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  */
-function keysystems_GetEmailForwarding($params)
+function keysystems_GetEmailForwarding(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
     try {
-        $response = $api->call('QueryMailFwdList', ['dnszone' => $domainName]);
+        $emailFwd = new MailFwd($params);
+        return $emailFwd->values;
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
-
-    $values = [];
-    for ($i = 0; $i < $response['property']['total'][0]; $i++) {
-        $from = explode("@", $response['property']['from'][$i]);
-        $values[$i] = ['prefix' => $from[0], 'forwardto' => $response['property']['to'][$i]];
-    }
-    return $values;
 }
 
 /**
  * Save Email Forwarding
  *
- * @param array $params common module parameters
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  */
-function keysystems_SaveEmailForwarding($params)
+function keysystems_SaveEmailForwarding(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
     try {
-        $response = $api->call('QueryMailFwdList', ['dnszone' => $domainName]);
+        $emailFwd = new MailFwd($params);
+        $emailFwd->update();
+        return [];
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
-
-    $orig = [];
-    $add = [];
-    $del = [];
-
-    for ($i = 0; $i < $response['property']['total'][0]; $i++) {
-        $orig[$response['property']['from'][$i]] = $response['property']['to'][$i];
-    }
-
-    foreach ($params["prefix"] as $key => $value) {
-        $from = $value . "@" . $domainName;
-        $to = $params["forwardto"][$key];
-        if (!$value || !$to) {
-            // invalid
-            continue;
-        }
-        if (isset($orig[$from])) {
-            // already present
-            if ($orig[$from] == $to) {
-                // no change needed
-                continue;
-            } else {
-                // differs, needs to be deleted and readded
-                $del[$from] = $orig[$from];
-                $add[$from] = $to;
-            }
-        } else {
-            // not present, needs to be added
-            $add[$from] = $to;
-        }
-    }
-
-    foreach ($orig as $from => $to) {
-        $explode = explode("@", $from);
-        if (!in_array($explode[0], $params["prefix"])) {
-            // not present locally anymore, needs to be deleted
-            $del[$from] = $to;
-        }
-    }
-
-    $values = [];
-
-    foreach ($del as $from => $to) {
-        try {
-            $api->call('DeleteMailFwd', ['from' => $from, 'to' => $to]);
-        } catch (Exception $e) {
-            $values['error'] .= $e->getMessage() . " ";
-        }
-    }
-
-    foreach ($add as $from => $to) {
-        try {
-            $api->call('AddMailFwd', ['from' => $from, 'to' => $to]);
-        } catch (Exception $e) {
-            $values['error'] .= $e->getMessage() . " ";
-        }
-    }
-
-    return $values;
 }
 
 /**
  * Enable/Disable ID Protection.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_IDProtectToggle($params)
+function keysystems_IDProtectToggle(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('ModifyDomain', [
-            'domain' => $domainName,
-            'X-WHOISPRIVACY' => ($params["protectenable"]) ? "1" : "0"
-        ]);
+        $domain = new ModifyDomain($params);
+        $domain->setWhoisPrivacy();
+        $domain->execute();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1194,31 +713,29 @@ function keysystems_IDProtectToggle($params)
  * Supports both displaying the EPP Code directly to a user or indicating
  * that the EPP Code will be emailed to the registrant.
  *
- * @param array $params common module parameters
- *
- * @return array
- *
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_GetEPPCode($params)
+function keysystems_GetEPPCode(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
     try {
-        $api = new RRPProxyClient($params);
-        $needSetAuthcode = ['de', 'be', 'no', 'eu'];
-        if (in_array($params['tld'], $needSetAuthcode)) {
+        $authCode = null;
+        if (in_array($params["tld"], ["de", "be", "no", "eu"])) {
             try {
-                $response = $api->call('SetAuthcode', ['domain' => $domainName]);
+                $auth = new SetAuthCode($params);
+                $authCode = $auth->getAuthCode();
             } catch (Exception $ex) {
-                $response = $api->call('StatusDomain', ['domain' => $domainName]);
+                // We suffer in silence
             }
-        } else {
-            $response = $api->call('StatusDomain', ['domain' => $domainName]);
+        }
+        if (!$authCode) {
+            $status = new StatusDomain($params);
+            $authCode = $status->authCode;
         }
 
-        if (strlen($response["property"]["auth"][0])) {
-            return ['eppcode' => htmlspecialchars($response["property"]["auth"][0])];
+        if ($authCode) {
+            return ['eppcode' => $authCode];
         } else {
             return ['error' => "No Auth Info code found!"];
         }
@@ -1237,25 +754,15 @@ function keysystems_GetEPPCode($params)
  * .AT target: REGISTRY (push domain back to registry)
  * .UK target: EXAMPLE-TAG-HOLDER (new IPS TAG) DETAGGED (push domain back to registry)
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_ReleaseDomain($params)
+function keysystems_ReleaseDomain(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $fields = [
-        'domain' => $domainName,
-    ];
-    if (!empty($params['transfertag'])) {
-        $fields["target"] = $params['transfertag'];
-    }
-
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('PushDomain', $fields);
+        $release = new PushDomain($params);
+        $release->execute();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1265,28 +772,15 @@ function keysystems_ReleaseDomain($params)
 /**
  * Delete Domain.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_RequestDelete($params)
+function keysystems_RequestDelete(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
-
-    if ($params['DeleteMode'] == 'ImmediateIfPossible') {
-        try {
-            $api->call('DeleteDomain', ['domain' => $domainName]);
-            return ['success' => true];
-        } catch (Exception $ex) {
-            // We revert to AUTODELETE
-        }
-    }
-
     try {
-        $api->call('SetDomainRenewalmode', ['domain' => $domainName, 'renewalmode' => 'AUTODELETE']);
+        $delete = new DeleteDomain($params);
+        $delete->execute();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1298,17 +792,15 @@ function keysystems_RequestDelete($params)
  *
  * Adds a child nameserver for the given domain name.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_RegisterNameserver($params)
+function keysystems_RegisterNameserver(array $params): array
 {
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('AddNameserver', ['nameserver' => $params['nameserver'], 'ipaddress0' => $params["ipaddress"]]);
+        $ns = new Nameserver($params);
+        $ns->add();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1320,17 +812,15 @@ function keysystems_RegisterNameserver($params)
  *
  * Modifies the IP of a child nameserver.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_ModifyNameserver($params)
+function keysystems_ModifyNameserver(array $params): array
 {
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('ModifyNameserver', ['nameserver' => $params['nameserver'], 'delipaddress0' => $params["currentipaddress"], 'addipaddress0' => $params["newipaddress"]]);
+        $ns = new Nameserver($params);
+        $ns->modify();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1340,17 +830,15 @@ function keysystems_ModifyNameserver($params)
 /**
  * Delete a Nameserver.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_DeleteNameserver($params)
+function keysystems_DeleteNameserver(array $params): array
 {
     try {
-        $api = new RRPProxyClient($params);
-        $api->call('DeleteNameserver', ['nameserver' => $params['nameserver']]);
+        $ns = new Nameserver($params);
+        $ns->delete();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1364,23 +852,19 @@ function keysystems_DeleteNameserver($params)
  * changes made directly at the domain registrar are synced to WHMCS.
  * It is called periodically for a domain.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_Sync($params)
+function keysystems_Sync(array $params): array
 {
     try {
-        $api = new RRPProxyClient($params);
-        $result = $api->call('StatusDomain', ['domain' => $params['sld'] . '.' . $params['tld']]);
-        $status = strtolower($result['property']['status'][0]);
+        $domain = new StatusDomain($params);
         //TODO set admin/tech/billing contacts if necessary
         return [
-            'active' => $status == 'active',
-            'expired' => $status == 'expired',
-            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString()
+            'active' => $domain->status == 'active',
+            'expired' => $domain->status == 'expired',
+            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $domain->expirationDate)->toDateString()
         ];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -1393,27 +877,24 @@ function keysystems_Sync($params)
  * Check status of incoming domain transfers and notify end-user upon
  * completion. This function is called daily for incoming domains.
  *
- * @param array $params common module parameters
- *
- * @return array
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed>
+ * @throws Exception
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
  */
-function keysystems_TransferSync($params)
+function keysystems_TransferSync(array $params): array
 {
     $values = [];
-    $api = new RRPProxyClient($params);
-    $domain = $params['sld'] . '.' . $params['tld'];
 
     try {
-        $result = $api->call('StatusDomain', ['domain' => $domain]);
+        $domain = new StatusDomain($params);
         $values['completed'] = true;
     } catch (Exception $ex) {
         try {
-            $transfer = $api->call('StatusDomainTransfer', ['domain' => $domain]);
-            if (strtolower($transfer['property']['transferstatus'][0]) == 'failed') {
+            $transfer = new StatusDomainTransfer($params);
+            if ($transfer->hasFailed()) {
                 $values['failed'] = true;
-                $values['reason'] = implode("\n", $transfer['property']['transferlog']);
+                $values['reason'] = $transfer->getLog();
             }
         } catch (Exception $ex) {
             $values['error'] = 'StatusDomainTransfer: ' . $ex->getMessage();
@@ -1421,67 +902,49 @@ function keysystems_TransferSync($params)
         return $values;
     }
 
-    $args = [];
-    $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $result['property']['registrationexpirationdate'][0])->toDateString();
+    $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $domain->expirationDate)->toDateString();
 
-    $zoneInfo = $api->getZoneInfo($params['tld']);
+    $zoneInfo = ZoneInfo::get($params);
     if (!$zoneInfo->renews_on_transfer) {
         $values['nextduedate'] = $values['expirydate'];
         $values['nextinvoicedate'] = $values['expirydate'];
     }
 
-    // Set transferlock
-    if ($params["TransferLock"] == "on") {
-        $args = ['transferlock' => 1];
-    }
+    $modifyDomain = new ModifyDomain($params);
+    $modifyDomain->setRegistrarLock();
+
+    // Get order
+    $order = new Order($modifyDomain->domainName);
 
     // Set nameservers
-    if ($params["NSUpdTransfer"] == "on") {
-        // Get order
-        $order = DB::table('tblorders as o')
-            ->join('tbldomains as d', 'd.orderid', '=', 'o.id')
-            ->where('d.domain', $domain)
-            ->select('o.userid', 'o.contactid', 'o.nameservers')
-            ->orderBy('o.id', 'DESC')
-            ->first();
-
-        // Set nameservers if defined in order
-        if ($order->nameservers) {
-            $existingNameservers = [];
-            if (isset($result["property"]["nameserver"])) {
-                $existingNameservers = $result["property"]["nameserver"];
-                sort($existingNameservers);
+    if ($params["NSUpdTransfer"] == "on" && $order->nameServers) {
+        $existingNameservers = $domain->nameServers;
+        sort($existingNameservers);
+        $orderNameservers = $order->nameServers;
+        sort($orderNameservers);
+        $diffNameservers = array_udiff($orderNameservers, $existingNameservers, "strcasecmp");
+        if (count($diffNameservers) > 0) {
+            $i = 1;
+            foreach ($orderNameservers as $nameserver) {
+                $modifyDomain->params["ns$i"] = $nameserver;
             }
-
-            $orderNameservers = explode(",", $order->nameservers);
-            sort($orderNameservers);
-
-            $diffNameservers = array_udiff($orderNameservers, $existingNameservers, "strcasecmp");
-            if (count($diffNameservers) > 0) {
-                $i = 0;
-                foreach ($orderNameservers as $nameserver) {
-                    $args["nameserver" . $i++] = $nameserver;
-                }
-            }
+            $modifyDomain->setNameServers();
         }
     }
 
     // Set owner contact if missing
-    $owner_id = $result['property']['ownercontact'][0];
+    $owner_id = $domain->ownerContact;
     if (!$owner_id) {
-        $owner_contact = DB::table($order->contactid ? 'tblcontacts' : 'tblclients')
-            ->where('id', $order->contactid ?: $order->userid)
-            ->select('firstname', 'lastname', 'address1', 'address2', 'city', 'state', 'country', 'postcode', 'phonenumber AS fullphonenumber', 'email', 'companyname')
-            ->first();
-
+        $owner_contact = $order->getContact();
         if ($owner_contact) {
             if (is_object($owner_contact)) {
                 $owner_contact = get_object_vars($owner_contact);
             }
             try {
-                $owner_id = $api->getOrCreateOwnerContact($owner_contact);
-                $args['ownercontact0'] = $owner_id;
+                $owner_id = Contact::getOrCreateOwnerContact($owner_contact, $params);
+                $modifyDomain->setOwnerContact($owner_id);
             } catch (Exception $ex) {
+                //TODO use module logging instead
                 localAPI('LogActivity', ['description' => "[keysystems] getOrCreateOwnerContact on TransferSync failed: {$ex->getMessage()}"]);
             }
         }
@@ -1513,23 +976,22 @@ function keysystems_TransferSync($params)
         }
 
         try {
-            $contact_id = $api->getOrCreateContact($admin_contact);
-            $args['admincontact0'] = $params['tld'] == 'it' ? $owner_id : $contact_id;
-            $args['billingcontact0'] = $contact_id;
-            $args['techcontact0'] = $contact_id;
+            $contact_id = Contact::getOrCreateContact($admin_contact, $params);
+            $modifyDomain->setAdminContact($params['tld'] == 'it' ? $owner_id : $contact_id);
+            $modifyDomain->setBillingContact($contact_id);
+            $modifyDomain->setTechContact($contact_id);
         } catch (Exception $ex) {
+            //TODO use module logging instead
             localAPI('LogActivity', ['description' => "[keysystems] getOrCreateContact on TransferSync failed: {$ex->getMessage()}"]);
         }
     }
 
     // Update domain
-    if (count($args) > 0) {
-        try {
-            $args['domain'] = $domain;
-            $api->call('ModifyDomain', $args);
-        } catch (Exception $ex) {
-            localAPI('LogActivity', ['description' => "[keysystems] ModifyDomain on TransferSync failed: {$ex->getMessage()}"]);
-        }
+    try {
+        $modifyDomain->execute();
+    } catch (Exception $ex) {
+        //TODO use module logging instead
+        localAPI('LogActivity', ['description' => "[keysystems] ModifyDomain on TransferSync failed: {$ex->getMessage()}"]);
     }
 
     return $values;
@@ -1538,121 +1000,90 @@ function keysystems_TransferSync($params)
 /**
  * DNSSEC Management
  *
- * @param array $params common module parameters
- *
- * @return array an array with a template name
+ * @param array<string, mixed> $params common module parameters
+ * @return array<string, mixed> an array with a template name
  */
-function keysystems_dnssec($params)
+function keysystems_dnssec(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
     $error = null;
     $dsData = [];
     $keyData = [];
 
     try {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["DNSSEC"])) {
-            $fields = [];
-            $i = 0;
-            foreach ($_POST["DNSSEC"] as $key => $record) {
-                $record = array_map('trim', $record);
-                if (!in_array('', $record)) {
-                    $fields["dnssec" . $i++] = implode(" ", $record);
-                }
+        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["DNSSEC"])) {
+            $modifyDomain = new ModifyDomain($params);
+            $modifyDomain->setDnssecRecords($_POST["DNSSEC"]);
+            if (count($modifyDomain->api->args) <= 1) {
+                $modifyDomain->setDnssecDelete();
             }
-            if (!$fields) {
-                $fields['DNSSECDELALL'] = 1;
-            }
-            $fields['domain'] = $domainName;
-            $api->call('ModifyDomain', $fields);
+            $modifyDomain->execute();
         }
 
-        $response = $api->call('StatusDomain', ['domain' => $domainName]);
-        $dsdata_rrp = (isset($response['property']['dnssecdsdata'])) ? $response['property']['dnssecdsdata'] : [];
-        $keydata_rrp = (isset($response['property']['dnssec'])) ? $response['property']['dnssec'] : [];
+        $statusDomain = new StatusDomain($params);
+
+        $dsdata_rrp = (isset($statusDomain->api->properties["DNSSECDSDATA"])) ? $statusDomain->api->properties["DNSSECDSDATA"] : [];
+        $keydata_rrp = (isset($statusDomain->api->properties["DNSSEC"])) ? $statusDomain->api->properties["DNSSEC"] : [];
 
         foreach ($dsdata_rrp as $ds) {
             list($keytag, $alg, $digesttype, $digest) = preg_split('/\s+/', $ds);
-            array_push($dsData, ["keytag" => $keytag, "alg" => $alg, "digesttype" => $digesttype, "digest" => $digest]);
+            $dsData[] = ["keytag" => $keytag, "alg" => $alg, "digesttype" => $digesttype, "digest" => $digest];
         }
         foreach ($keydata_rrp as $key) {
             list($flags, $protocol, $alg, $pubkey) = preg_split('/\s+/', $key);
-            array_push($keyData, ["flags" => $flags, "protocol" => $protocol, "alg" => $alg, "pubkey" => $pubkey]);
+            $keyData[] = ["flags" => $flags, "protocol" => $protocol, "alg" => $alg, "pubkey" => $pubkey];
         }
     } catch (Exception $ex) {
         $error = $ex->getMessage();
     }
 
     return [
-        'templatefile' => "dnssec",
-        'vars' => [
-            'flagOptions' => [
-                256 => 'Zone Signing Key',
-                257 => 'Key Signing Key'
+        "templatefile" => "dnssec",
+        "vars" => [
+            "flagOptions" => [
+                256 => "Zone Signing Key",
+                257 => "Key Signing Key"
             ],
-            'algOptions' => [
-                8 => 'RSA/SHA256',
-                10 => 'RSA/SHA512',
-                12 => 'GOST R 34.10-2001',
-                13 => 'ECDSA/SHA-256',
-                14 => 'ECDSA/SHA-384',
-                15 => 'Ed25519',
-                16 => 'Ed448'
+            "algOptions" => [
+                8 => "RSA/SHA256",
+                10 => "RSA/SHA512",
+                12 => "GOST R 34.10-2001",
+                13 => "ECDSA/SHA-256",
+                14 => "ECDSA/SHA-384",
+                15 => "Ed25519",
+                16 => "Ed448"
             ],
-            'digestOptions' => [
-                2 => 'SHA-256',
-                3 => 'GOST R 34.11-94',
-                4 => 'SHA-384'
+            "digestOptions" => [
+                2 => "SHA-256",
+                3 => "GOST R 34.11-94",
+                4 => "SHA-384"
             ],
-            'dsdata' => $dsData,
-            'ksdata' => $keyData,
-            'successful' => ($_SERVER['REQUEST_METHOD'] === 'POST' && $error == null),
-            'error' => $error
+            "dsdata" => $dsData,
+            "ksdata" => $keyData,
+            "successful" => ($_SERVER["REQUEST_METHOD"] === "POST" && $error == null),
+            "error" => $error
         ]
     ];
 }
 
-function keysystems_ConvertPrice($params, $price, $fromCurrency, $toCurrency)
-{
-    return round($price * keysystems_GetCachedExchangeRate($params, $fromCurrency, $toCurrency));
-}
-
-$exchangeRates = [];
-
-function keysystems_GetCachedExchangeRate($params, $from, $to)
-{
-    global $exchangeRates;
-
-    if ($from == $to) {
-        return 1;
-    }
-    $key = "$from-$to";
-    if (!isset($exchangeRates[$key])) {
-        $api = new RRPProxyClient($params);
-        try {
-            $result = $api->call('QueryExchangeRates', ['currencyfrom' => $from, 'currencyto' => $to, 'limit' => 1]);
-        } catch (Exception $ex) {
-            die("ERROR getting exchange rate $from - $to : {$ex->getMessage()}\n");
-        }
-        $exchangeRates[$key] = $result['property']['rate'][0];
-    }
-    return $exchangeRates[$key];
-}
-
+/**
+ * @param array<string, mixed> $params
+ * @return array<string, string>|ResultsList<ImportItem>
+ * @throws Exception
+ */
 function keysystems_GetTldPricing(array $params)
 {
-    $ignoreZones = ['nameemail', 'nuidn']; // Those are not real TLDs but the API returns then for some reason
+    $ignoreZones = ["nameemail", "nuidn"]; // Those are not real TLDs but the API returns then for some reason
 
     $pricelist = [];
-    $api = new RRPProxyClient($params);
     try {
-        $result = $api->call('QueryZoneList');
+        $zoneList = new QueryZoneList($params);
+        $zoneList->execute();
     } catch (Exception $e) {
-        return ['error' => 'QueryZoneList - ' . $e->getMessage()];
+        return ["error" => "QueryZoneList - " . $e->getMessage()];
     }
 
-    foreach ($result['property']['zone'] as $id => $zone) {
-        if ($result['property']['periodtype'][$id] != "YEAR") {
+    foreach ($zoneList->api->properties["ZONE"] as $id => $zone) {
+        if ($zoneList->api->properties["PERIODTYPE"][$id] != "YEAR") {
             continue;
         }
         if (in_array($zone, $ignoreZones)) {
@@ -1660,7 +1091,7 @@ function keysystems_GetTldPricing(array $params)
         }
 
         // Determine actual zones
-        $domain = $result['property']['3rds'][$id];
+        $domain = $zoneList->api->properties["3RDS"][$id];
         $domains = [];
         if (strpos($domain, ' ') !== false) {
             if (strpos($domain, ',') !== false) {
@@ -1678,16 +1109,16 @@ function keysystems_GetTldPricing(array $params)
 
         foreach ($domains as $domain) {
             $pricelist[strtolower($domain)] = [
-                "active" => $result['property']['active'][$id],
-                "yearly" => $result['property']['periodtype'][$id] == 'YEAR',
-                "count" => $result['property']['domaincount'][$id] ? $result['property']['domaincount'][$id] :  0,
-                "currency" => $result['property']['currency'][$id],
-                "annual_fee" => is_numeric($result['property']['annual'][$id]) ? $result['property']['annual'][$id] : null,
-                "application_fee" => is_numeric($result['property']['application'][$id]) ? $result['property']['application'][$id] : null,
-                "restore_fee" => is_numeric($result['property']['restore'][$id]) ? $result['property']['restore'][$id] : null,
-                "setup_fee" => is_numeric($result['property']['setup'][$id]) ? $result['property']['setup'][$id] : null,
-                "trade_fee" => is_numeric($result['property']['trade'][$id]) ? $result['property']['trade'][$id] : null,
-                "transfer_fee" => is_numeric($result['property']['transfer'][$id]) ? $result['property']['transfer'][$id] : null,
+                "active" => $zoneList->api->properties["ACTIVE"][$id],
+                "yearly" => $zoneList->api->properties["PERIODTYPE"][$id] == "YEAR",
+                "count" => $zoneList->api->properties["DOMAINCOUNT"][$id] ?:  0,
+                "currency" => $zoneList->api->properties["CURRENCY"][$id],
+                "annual_fee" => (float) $zoneList->api->properties["ANNUAL"][$id],
+                "application_fee" => (float) $zoneList->api->properties["APPLICATION"][$id],
+                "restore_fee" => (float) $zoneList->api->properties["RESTORE"][$id],
+                "setup_fee" => (float) $zoneList->api->properties["SETUP"][$id],
+                "trade_fee" => (float) $zoneList->api->properties["TRADE"][$id],
+                "transfer_fee" => (float) $zoneList->api->properties["TRANSFER"][$id]
             ];
         }
     }
@@ -1700,15 +1131,17 @@ function keysystems_GetTldPricing(array $params)
             continue;
         }
 
-        $zone = $api->getZoneInfo($extension);
-        if ($zone == null) {
+        try {
+            $zone = ZoneInfo::get($params, $extension);
+        } catch (Exception $ex) {
             continue; // let's ignore this for now...
         }
 
         preg_match_all("/(?:(\d+)y)+/", $zone->periods, $matches);
         $years = $matches[1];
 
-        if (in_array($values['currency'], array_column(localAPI('GetCurrencies', [])['currencies']['currency'], 'code'))) {
+        $systemCurrencies = localAPI('GetCurrencies', [])['currencies']['currency'];
+        if (in_array($values['currency'], array_column($systemCurrencies, 'code'))) {
             $currency = $values['currency'];
             $setupFee = $values['setup_fee'];
             $annualFee = $values['annual_fee'];
@@ -1716,10 +1149,10 @@ function keysystems_GetTldPricing(array $params)
             $redemptionFee = $values['restore_fee'];
         } else {
             $currency = $defaultCurrency;
-            $setupFee = keysystems_ConvertPrice($params, $values['setup_fee'], $values['currency'], $currency);
-            $annualFee = keysystems_ConvertPrice($params, $values['annual_fee'], $values['currency'], $currency);
-            $transferFee = keysystems_ConvertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
-            $redemptionFee = keysystems_ConvertPrice($params, $values['restore_fee'], $values['currency'], $currency);
+            $setupFee = Pricing::convertPrice($params, $values['setup_fee'], $values['currency'], $currency);
+            $annualFee = Pricing::convertPrice($params, $values['annual_fee'], $values['currency'], $currency);
+            $transferFee = Pricing::convertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
+            $redemptionFee = Pricing::convertPrice($params, $values['restore_fee'], $values['currency'], $currency);
         }
 
         // Workaround for stupid WHMCS logic as of 7.10 RC2
@@ -1753,34 +1186,10 @@ function keysystems_GetTldPricing(array $params)
             }
         }
 
-        $results[] = $item;
+        $results->append($item);
     }
 
-    DB::table('tbldomainpricing AS p')
-        ->join('mod_rrpproxy_zones AS z', DB::raw('CONCAT(".", z.zone)'), '=', 'p.extension')
-        ->where('p.autoreg', 'keysystems')
-        ->update([
-            'p.eppcode' => DB::raw('`z`.`epp_required`')
-        ]);
-
-    if ($params['AutoDNSManagement']) {
-        DB::table('tbldomainpricing')
-            ->where('autoreg', 'keysystems')
-            ->update(['dnsmanagement' => 1]);
-    }
-    if ($params['AutoEmailForwarding']) {
-        DB::table('tbldomainpricing')
-            ->where('autoreg', 'keysystems')
-            ->update(['emailforwarding' => 1]);
-    }
-    if ($params['AutoIDProtection']) {
-        DB::table('tbldomainpricing AS p')
-            ->join('mod_rrpproxy_zones AS z', DB::raw('CONCAT(".", z.zone)'), '=', 'p.extension')
-            ->where('p.autoreg', 'keysystems')
-            ->update([
-                'p.idprotection' => DB::raw('`z`.`id_protection`')
-            ]);
-    }
+    Pricing::syncFeatures($params);
 
     return $results;
 }
@@ -1790,11 +1199,15 @@ function keysystems_GetTldPricing(array $params)
  *
  * Allows you to define additional actions your module supports.
  *
- * @return array
+ * @param array<string, mixed> $params
+ * @return array<string, mixed>
  */
-function keysystems_ClientAreaCustomButtonArray()
+function keysystems_ClientAreaCustomButtonArray(array $params): array
 {
-    return null;
+    if ($params['DNSSEC'] == 'on') {
+        return ["DNSSEC Management" => "dnssec"];
+    }
+    return [];
 }
 
 /**
@@ -1803,16 +1216,15 @@ function keysystems_ClientAreaCustomButtonArray()
  * Only the functions defined within this function or the Client Area
  * Custom Button Array can be invoked by client level users.
  *
- * @param $params
- * @return array
+ * @param array<string, mixed> $params
+ * @return array<string, mixed>
  */
-function keysystems_ClientAreaAllowedFunctions($params)
+function keysystems_ClientAreaAllowedFunctions(array $params): array
 {
-    $functions = [];
-    if ($params['DNSSEC']) {
-        $functions['DNSSEC Management'] = 'dnssec';
+    if ($params['DNSSEC'] == 'on') {
+        return ["DNSSEC Management" => "dnssec"];
     }
-    return $functions;
+    return [];
 }
 
 /**
@@ -1821,91 +1233,22 @@ function keysystems_ClientAreaAllowedFunctions($params)
  * This function renders output to the domain details interface within
  * the client area. The return should be the HTML to be output.
  *
- * @return string HTML Output
+ * @return string|null HTML Output
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
  *
  */
-function keysystems_ClientArea()
-{
-    return null;
-}
+//function keysystems_ClientArea(): ?string
+//{
+//    return null;
+//}
 
 /**
  * Return Zone Configuration / Feature data
- * @param array $params common module parameters
+ * @param array<string, mixed> $params common module parameters
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- * @return array|null
+ * @return array<string, mixed>
  */
-function keysystems_GetZoneFeatures(array $params): ?array
+function keysystems_GetZoneFeatures(array $params): array
 {
-    $domainName = $params["sld"] . "." . $params["tld"];
-    $api = new RRPProxyClient($params);
-    try {
-        $zoneInfo = $api->getZoneInfo($params["tld"]);
-        $registrationPeriods = $api->formatPeriods($zoneInfo->periods);
-        $renewalPeriods = $registrationPeriods;
-        $transferPeriods = $registrationPeriods;
-        $transferResetPeriods = $registrationPeriods;
-
-        $isAfnicTLD = preg_match("/\.(fr|pm|re|tf|wf|yt)$/i", $domainName);
-        $isAuTLD = preg_match("/\.au$/i", $domainName);
-        $isCaUsTLD = preg_match("/\.(ca|us)$/i", $domainName);
-        $contactsForTransfer = [];
-        if ($isAfnicTLD) {
-            $contactsForTransfer = ["ADMINCONTACT", "TECHCONTACT"];
-        } elseif ($isAuTLD || (!$isCaUsTLD && $zoneInfo->needs_trade)) {
-            $contactsForTransfer = ["OWNERCONTACT", "ADMINCONTACT", "TECHCONTACT", "BILLINGCONTACT"];
-        }
-
-        //TODO add missing info from zoneInfo: handle_updatable
-        $data = [
-            "tld" => [
-                "label" => $params["tld"],
-                "class" => null,
-                "isAFNIC" => $isAfnicTLD,
-                "repository" => null
-            ],
-            "registration" => [
-                "periods" => $registrationPeriods,
-                "defaultPeriod" => $registrationPeriods[0]
-            ],
-            "renewal" => [
-                "periods" => $renewalPeriods,
-                "defaultPeriod" => $renewalPeriods[0],
-                "explicit" => $zoneInfo->supports_renewals,
-                "graceDays" => $zoneInfo->grace_days
-            ],
-            "redemption" => [
-                "days" => $zoneInfo->redemption_days
-            ],
-            "transfer" => [
-                "periods" => $transferPeriods,
-                "resetPeriods" => $transferResetPeriods,
-                "defaultPeriod" => $transferPeriods[0], // evtl. 0Y
-                "isFree" => !$zoneInfo->renews_on_transfer,
-                "includeContacts" => !empty($contactsForTransfer),
-                "contacts" => $contactsForTransfer,
-                "requiresAuthCode" => $zoneInfo->epp_required
-            ],
-            "trade" => [
-                "required" => $zoneInfo->needs_trade,
-                "isStandard" => true,
-                "isIRTP" => false,
-                "triggerFields" => ["Registrant" => ["First Name", "Last Name", "Organization Name", "Email"]]
-            ],
-            "update" => [
-                "unlockWithAuthCode" => (bool)preg_match("/\.fi$/i", $params["tld"]),
-            ],
-            "addons" => [
-                "idprotection" => $zoneInfo->id_protection
-            ],
-            "registrant" => [
-                "changeBy" => null
-            ]
-        ];
-        return $data;
-    } catch (Exception $ex) {
-        //TODO handle this somehow
-        return [];
-    }
+    return ZoneInfo::getForMigrator($params);
 }

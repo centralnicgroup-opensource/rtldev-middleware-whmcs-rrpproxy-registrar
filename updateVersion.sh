@@ -8,7 +8,7 @@
 newversion="$1"
 date="$(date +'%Y-%m-%d')"
 
-printf -v sed_script 's/RRPPROXY_VERSION\", \"[0-9]+\.[0-9]+\.[0-9]+\"/RRPPROXY_VERSION", "%s"/g' "${newversion}"
+printf -v sed_script 's/RRPPROXY_VERSION = \"[0-9]+\.[0-9]+\.[0-9]+\"/RRPPROXY_VERSION = "%s"/g' "${newversion}"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   sed -E -i '' -e "${sed_script}" modules/registrars/keysystems/keysystems.php
 else

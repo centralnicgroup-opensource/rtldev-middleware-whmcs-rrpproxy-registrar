@@ -5,14 +5,8 @@ switch ($params["additionalfields"]["Application Purpose"]) {
         $purpose = "P1";
         break;
     case "Non-profit business":
-        $purpose = "P2";
-        break;
     case "Club":
-        $purpose = "P2";
-        break;
     case "Association":
-        $purpose = "P2";
-        break;
     case "Religious Organization":
         $purpose = "P2";
         break;
@@ -26,7 +20,9 @@ switch ($params["additionalfields"]["Application Purpose"]) {
         $purpose = "P5";
         break;
 }
-$extensions['X-US-NEXUS-APPPURPOSE'] = $purpose;
+if (isset($purpose)) {
+    $extensions['X-US-NEXUS-APPPURPOSE'] = $purpose;
+}
 
 switch ($params["additionalfields"]["Nexus Category"]) {
     case "C11":

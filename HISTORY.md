@@ -1,3 +1,15 @@
+# [1.0.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.12.1...v1.0.0) (2022-01-22)
+
+
+### Features
+
+* **api:** use php-sdk ([1acd250](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/1acd250a96d0020b7927e9523d67e8c1ab367545))
+
+
+### BREAKING CHANGES
+
+* **api:** PHP 7.4 is now the minimum requirement
+
 ## [0.12.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.12.0...v0.12.1) (2021-12-19)
 
 

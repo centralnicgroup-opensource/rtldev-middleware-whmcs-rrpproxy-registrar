@@ -54,7 +54,7 @@ use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
 use WHMCS\Module\Registrar\RRPproxy\Migrator;
 use WHMCS\Module\Registrar\RRPproxy\Updater;
 
-const RRPPROXY_VERSION = "0.12.1";
+const RRPPROXY_VERSION = "1.0.0";
 
 require_once __DIR__ . '/vendor/autoload.php';
 

@@ -29,6 +29,9 @@ parameters:
         -
             message: '#Constant ROOTDIR not found.#'
             path: resources/domains/additionalfields.php
+        -
+            message: '#Function add_hook not found#'
+            path: modules/registrars/keysystems/hooks.php
         - '#Constant RRPPROXY_VERSION not found#'
         - '#Call to an undefined static method Illuminate\\Database\\Capsule\\Manager::raw\(\)#'
         - '#WHMCS\\Domain#'

@@ -39,6 +39,7 @@ use WHMCS\Module\Registrar\RRPproxy\Commands\QueryZoneList;
 use WHMCS\Module\Registrar\RRPproxy\Commands\RenewDomain;
 use WHMCS\Module\Registrar\RRPproxy\Commands\ResendNotification;
 use WHMCS\Module\Registrar\RRPproxy\Commands\SetAuthCode;
+use WHMCS\Module\Registrar\RRPproxy\Commands\SetDomainRenewalMode;
 use WHMCS\Module\Registrar\RRPproxy\Commands\StatusContact;
 use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomain;
 use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomainTransfer;
@@ -163,6 +164,12 @@ function keysystems_getConfigArray(array $params): array
             "Default" => false,
             'Description' => 'Enables DNSSEC configuration in the client area'
         ],
+        'DailyCron' => [
+            'FriendlyName' => 'Daily Cron',
+            'Type' => 'yesno',
+            "Default" => false,
+            'Description' => 'Makes some daily checks and sends an e-mail report'
+        ],
         'TestMode' => [
             'Type' => 'yesno',
             'Description' => 'Tick to enable OT&amp;E',
@@ -194,7 +201,7 @@ function keysystems_GetDomainInformation(array $params): Domain
     $domain->setDomain($domainStatus->domainName);
     $domain->setNameservers($domainStatus->nameServers);
     $domain->setTransferLock($domainStatus->transferLock);
-    $domain->setExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s.u", $domainStatus->expirationDate));
+    $domain->setExpiryDate(Carbon::createFromFormat("Y-m-d H:i:s", $domainStatus->expirationDate));
 
     //check contact status
     try {
@@ -289,8 +296,8 @@ function keysystems_RegisterDomain(array $params): array
     try {
         $register->execute();
         return ['success' => true];
-    } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -327,8 +334,8 @@ function keysystems_TransferDomain(array $params): array
             return ["error" => $transfer->getErrors()];
         }
         return ["success" => true];
-    } catch (Exception $e) {
-        return ["error" => $e->getMessage()];
+    } catch (Exception $ex) {
+        return ["error" => $ex->getMessage()];
     }
 }
 
@@ -542,8 +549,8 @@ function keysystems_CheckAvailability(array $params)
             }
         }
         return $results;
-    } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -575,8 +582,8 @@ function keysystems_GetDomainSuggestions(array $params)
             }
         }
         return $results;
-    } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -665,8 +672,8 @@ function keysystems_GetEmailForwarding(array $params): array
     try {
         $emailFwd = new MailFwd($params);
         return $emailFwd->values;
-    } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -683,8 +690,8 @@ function keysystems_SaveEmailForwarding(array $params): array
         $emailFwd = new MailFwd($params);
         $emailFwd->update();
         return [];
-    } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+    } catch (Exception $ex) {
+        return ['error' => $ex->getMessage()];
     }
 }
 
@@ -778,9 +785,20 @@ function keysystems_ReleaseDomain(array $params): array
  */
 function keysystems_RequestDelete(array $params): array
 {
+    if ($params["DeleteMode"] == "ImmediateIfPossible") {
+        try {
+                $delete = new DeleteDomain($params);
+                $delete->execute();
+                return ['success' => true];
+        } catch (Exception $ex) {
+            // We fallback to setting renewal mode
+        }
+    }
+
     try {
-        $delete = new DeleteDomain($params);
-        $delete->execute();
+        $renewalMode = new SetDomainRenewalMode($params);
+        $renewalMode->setAutoDelete();
+        $renewalMode->execute();
         return ['success' => true];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -862,9 +880,9 @@ function keysystems_Sync(array $params): array
         $domain = new StatusDomain($params);
         //TODO set admin/tech/billing contacts if necessary
         return [
-            'active' => $domain->status == 'active',
-            'expired' => $domain->status == 'expired',
-            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s.u', $domain->expirationDate)->toDateString()
+            'active' => $domain->isActive,
+            'expired' => $domain->isExpired,
+            'expirydate' => Carbon::createFromFormat('Y-m-d H:i:s', $domain->expirationDate)->toDateString()
         ];
     } catch (Exception $ex) {
         return ['error' => $ex->getMessage()];
@@ -895,6 +913,8 @@ function keysystems_TransferSync(array $params): array
             if ($transfer->hasFailed()) {
                 $values['failed'] = true;
                 $values['reason'] = $transfer->getLog();
+            } else {
+                $values['completed'] = false;
             }
         } catch (Exception $ex) {
             $values['error'] = 'StatusDomainTransfer: ' . $ex->getMessage();
@@ -902,7 +922,7 @@ function keysystems_TransferSync(array $params): array
         return $values;
     }
 
-    $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s.u', $domain->expirationDate)->toDateString();
+    $values['expirydate'] = Carbon::createFromFormat('Y-m-d H:i:s', $domain->expirationDate)->toDateString();
 
     $zoneInfo = ZoneInfo::get($params);
     if (!$zoneInfo->renews_on_transfer) {
@@ -1078,8 +1098,8 @@ function keysystems_GetTldPricing(array $params)
     try {
         $zoneList = new QueryZoneList($params);
         $zoneList->execute();
-    } catch (Exception $e) {
-        return ["error" => "QueryZoneList - " . $e->getMessage()];
+    } catch (Exception $ex) {
+        return ["error" => "QueryZoneList - " . $ex->getMessage()];
     }
 
     foreach ($zoneList->api->properties["ZONE"] as $id => $zone) {

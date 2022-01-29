@@ -20,7 +20,7 @@ class ZoneInfo
      * @return ZoneModel
      * @throws Exception
      */
-    public static function get(array $params, ?string $tld = null)
+    public static function get(array $params, ?string $tld = null): ZoneModel
     {
         if (!$tld) {
             $tld = $params["tld"];
@@ -43,7 +43,7 @@ class ZoneInfo
                 if ($dateDiff->format('%r%a') > $maxDays) {
                     $updateNeeded = true;
                 }
-            } catch (Exception $e) {
+            } catch (Exception $ex) {
                 $updateNeeded = true;
             }
         }

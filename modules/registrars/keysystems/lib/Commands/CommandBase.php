@@ -59,6 +59,21 @@ abstract class CommandBase
     }
 
     /**
+     * @return void
+     * @throws Exception
+     */
+    public function executeGetAllPages(): void
+    {
+        try {
+            $this->api->call($this->commandName, true);
+            $this->setSuccess();
+        } catch (Exception $ex) {
+            $this->setError($ex->getMessage());
+            throw new Exception($ex->getMessage());
+        }
+    }
+
+    /**
      * @return bool
      */
     public function wasSuccessful(): bool

@@ -6,8 +6,10 @@ use Exception;
 
 class StatusDomain extends CommandBase
 {
-    public string $status;
+    public bool $isActive;
+    public bool $isExpired;
     public bool $isPremium;
+    public string $renewalMode;
     /**
      * @var array<string, string>
      */
@@ -39,14 +41,15 @@ class StatusDomain extends CommandBase
 
         $this->execute();
 
-        $this->status = strtolower($this->api->properties['STATUS'][0]);
+        $this->isActive = (bool)preg_match("/ACTIVE/i", $this->api->properties["STATUS"][0]);
         $this->isPremium = isset($this->api->properties["X-FEE-CLASS"][0]) && $this->api->properties["X-FEE-CLASS"][0] === "premium";
-        $this->nameServers = $this->getNameServers();
+        $this->renewalMode = $this->api->properties['RENEWALMODE'][0];
+        $this->setNameServers();
         $this->transferLock = (bool) @$this->api->properties["TRANSFERLOCK"][0];
         $this->idProtection = @$this->api->properties["X-WHOIS-PRIVACY"][0] > 0;
-        $this->isTrusteeUsed = $this->getTrusteeStatus();
-        $this->creationDate = $this->api->properties["CREATEDDATE"][0];
-        $this->expirationDate = $this->api->properties["REGISTRATIONEXPIRATIONDATE"][0];
+        $this->setTrusteeStatus();
+        $this->creationDate = $this->api->castDate($this->api->properties["CREATEDDATE"][0])["long"];
+        $this->setExpiryData();
         $this->timeToSuspension = @$this->api->properties["X-TIME-TO-SUSPENSION"][0] ?: "";
         if (strlen($this->api->properties["AUTH"][0]) > 0) {
             $this->authCode = htmlspecialchars($this->api->properties["AUTH"][0]);
@@ -57,13 +60,13 @@ class StatusDomain extends CommandBase
         $this->billingContact = @$this->api->properties["BILLINGCONTACT"][0] ?: "";
         $this->techContact = @$this->api->properties["TECHCONTACT"][0] ?: "";
 
-        $this->vatId = $this->getRegistrantVatId();
+        $this->setRegistrantVatId();
     }
 
     /**
-     * @return array<string, string>
+     * @return void
      */
-    private function getNameServers(): array
+    private function setNameServers(): void
     {
         $nameservers = [];
         $i = 1;
@@ -71,39 +74,69 @@ class StatusDomain extends CommandBase
             $nameservers["ns" . $i] = $nameserver;
             $i++;
         }
-        return $nameservers;
+        $this->nameServers = $nameservers;
     }
 
     /**
-     * @return bool
+     * @return void
      */
-    private function getTrusteeStatus(): bool
+    private function setTrusteeStatus(): void
     {
         $keys = array_keys($this->api->properties);
         $names = preg_grep("/^X-.+-ACCEPT-TRUSTEE-TAC$/i", $keys);
-        return !empty($names);
+        $this->isTrusteeUsed = !empty($names);
     }
 
     /**
-     * @return string|null
+     * @return void
      */
-    private function getRegistrantVatId(): ?string
+    private function setRegistrantVatId(): void
     {
         $keys = array_keys($this->api->properties);
 
         $vatId = preg_grep("/VATID/", $keys);
         if ($vatId === false) {
-            return null;
+            $this->vatId = null;
+            return;
         }
         $names = preg_grep("/ADMIN|TECH|BILLING/", $vatId, PREG_GREP_INVERT);
         if ($names === false) {
-            return null;
+            $this->vatId = null;
+            return;
         }
         foreach ($names as $prop) {
             if (!empty($this->api->properties[$prop])) {
-                return $this->api->properties[$prop];
+                $this->vatId = $this->api->properties[$prop];
             }
         }
-        return null;
+        $this->vatId = null;
+    }
+
+    /**
+     * Gets proper expiration date for WHMCS
+     * @return void
+     */
+    private function setExpiryData(): void
+    {
+        $expirationDate = $this->api->castDate($this->api->properties["REGISTRATIONEXPIRATIONDATE"][0]);
+
+//        $renewalDate = $this->api->castDate($this->api->properties["RENEWALDATE"][0]);
+//        $paidUntilDate = $this->api->castDate($this->api->properties["PAIDUNTILDATE"][0]);
+//        if ($renewalDate["ts"] > $paidUntilDate["ts"]) {
+//            $ts = $paidUntilDate["ts"];
+//        } else {
+//            // hmmm this looks wrong...
+//            $ts = $renewalDate["ts"] + $paidUntilDate["ts"] - $expirationDate["ts"];
+//        }
+//        // this looks wrong also...
+//        $ts = max($paidUntilDate["ts"], $expirationDate["ts"]);
+
+        if ($this->renewalMode == "RENEWONCE") {
+            $ts = strtotime($expirationDate["long"] . " +1 year");
+        } else {
+            $ts = $expirationDate["ts"];
+        }
+        $this->expirationDate = date("Y-m-d H:i:s", $ts);
+        $this->isExpired = strtotime("now") > $ts;
     }
 }

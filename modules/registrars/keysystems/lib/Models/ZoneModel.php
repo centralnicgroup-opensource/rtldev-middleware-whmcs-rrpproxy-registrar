@@ -116,10 +116,10 @@ class ZoneModel extends Model
                 "status" => "success",
                 "description" => ""
             ];
-        } catch (Exception $e) {
+        } catch (Exception $ex) {
             return [
                 "status" => "error",
-                "description" => "Could not create table `" . self::$tblName . "`: " . $e->getMessage()
+                "description" => "Could not create table `" . self::$tblName . "`: " . $ex->getMessage()
             ];
         }
     }

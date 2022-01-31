@@ -12,6 +12,8 @@ class SetAuthCode extends CommandBase
     public function __construct(array $params)
     {
         parent::__construct($params);
+
+        $this->api->args["DOMAIN"] = $this->domainName;
     }
 
     /**

@@ -36,7 +36,6 @@ class RenewDomain extends CommandBase
             $this->setCommandName("SetDomainRenewalMode");
         } else {
             $this->api->args["PERIOD"] = $this->params["regperiod"];
-            $this->api->args["EXPIRATION"] = $this->domain->expirydate->year;
         }
         parent::execute();
     }

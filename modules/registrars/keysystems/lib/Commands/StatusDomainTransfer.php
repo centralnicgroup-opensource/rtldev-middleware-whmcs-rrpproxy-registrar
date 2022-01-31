@@ -20,6 +20,8 @@ class StatusDomainTransfer extends CommandBase
     {
         parent::__construct($params);
 
+        $this->api->args["DOMAIN"] = $this->domainName;
+
         $this->execute();
         $this->status = strtolower($this->api->properties["TRANSFERSTATUS"][0]);
         $this->transferLog = $this->api->properties["TRANSFERLOG"];

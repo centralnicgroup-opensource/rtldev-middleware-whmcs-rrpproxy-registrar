@@ -52,10 +52,10 @@ class StatusDomain extends CommandBase
             $this->authCode = htmlspecialchars($this->api->properties["AUTH"][0]);
         }
 
-        $this->ownerContact = $this->api->properties["OWNERCONTACT"][0];
-        $this->adminContact = $this->api->properties["ADMINCONTACT"][0];
-        $this->billingContact = $this->api->properties["BILLINGCONTACT"][0];
-        $this->techContact = $this->api->properties["TECHCONTACT"][0];
+        $this->ownerContact = @$this->api->properties["OWNERCONTACT"][0] ?: "";
+        $this->adminContact = @$this->api->properties["ADMINCONTACT"][0] ?: "";
+        $this->billingContact = @$this->api->properties["BILLINGCONTACT"][0] ?: "";
+        $this->techContact = @$this->api->properties["TECHCONTACT"][0] ?: "";
 
         $this->vatId = $this->getRegistrantVatId();
     }

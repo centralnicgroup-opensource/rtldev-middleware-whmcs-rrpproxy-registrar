@@ -1,3 +1,12 @@
+## [1.0.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.1...v1.0.2) (2022-01-31)
+
+
+### Bug Fixes
+
+* **epp:** SetAuthCode command was not working ([87176b6](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/87176b616deee21f7b8f2b0b6a6d71089cf7cf6e))
+* **RenewDomain:** remove EXPIRATION parameter as it could lead to 2 year renewal ([2f28612](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/2f28612e3591cf6ec23f2857fec2c75279175cef))
+* **transfer:** StatusDomainTransfer command was not working ([35471cb](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/35471cb6637823bd07d9e524df85a0bef950baf1))
+
 ## [1.0.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.0...v1.0.1) (2022-01-31)
 
 

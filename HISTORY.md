@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.0...v1.0.1) (2022-01-31)
+
+
+### Bug Fixes
+
+* **statusdomain:** tolerate empty contact handles ([505c7d0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/505c7d0b78719cc3d4140ed193eb98fe422f253e))
+
 # [1.0.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v0.12.1...v1.0.0) (2022-01-22)
 
 

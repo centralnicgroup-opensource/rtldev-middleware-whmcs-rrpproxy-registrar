@@ -3,6 +3,8 @@
 namespace WHMCS\Module\Registrar\RRPproxy\Commands;
 
 use Exception;
+use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
+use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
 
 class StatusDomain extends CommandBase
 {
@@ -29,6 +31,8 @@ class StatusDomain extends CommandBase
     public ?string $vatId;
     public bool $isTrusteeUsed;
 
+    private ZoneModel $zoneInfo;
+
     /**
      * @param array<string, mixed> $params
      * @throws Exception
@@ -40,6 +44,8 @@ class StatusDomain extends CommandBase
         $this->api->args["DOMAIN"] = $this->domainName;
 
         $this->execute();
+
+        $this->zoneInfo = ZoneInfo::get($params);
 
         $this->isActive = (bool)preg_match("/ACTIVE/i", $this->api->properties["STATUS"][0]);
         $this->isPremium = isset($this->api->properties["X-FEE-CLASS"][0]) && $this->api->properties["X-FEE-CLASS"][0] === "premium";
@@ -118,21 +124,11 @@ class StatusDomain extends CommandBase
      */
     private function setExpiryData(): void
     {
-        $expirationDate = $this->api->castDate($this->api->properties["REGISTRATIONEXPIRATIONDATE"][0]);
-
-//        $renewalDate = $this->api->castDate($this->api->properties["RENEWALDATE"][0]);
-//        $paidUntilDate = $this->api->castDate($this->api->properties["PAIDUNTILDATE"][0]);
-//        if ($renewalDate["ts"] > $paidUntilDate["ts"]) {
-//            $ts = $paidUntilDate["ts"];
-//        } else {
-//            // hmmm this looks wrong...
-//            $ts = $renewalDate["ts"] + $paidUntilDate["ts"] - $expirationDate["ts"];
-//        }
-//        // this looks wrong also...
-//        $ts = max($paidUntilDate["ts"], $expirationDate["ts"]);
+        $expirationDate = $this->api->castDate($this->api->properties["PAIDUNTILDATE"][0]);
 
         if ($this->renewalMode == "RENEWONCE") {
-            $ts = strtotime($expirationDate["long"] . " +1 year");
+            $periods = ZoneInfo::formatPeriods($this->zoneInfo->periods);
+            $ts = strtotime($expirationDate["long"] . " +$periods[0] year");
         } else {
             $ts = $expirationDate["ts"];
         }

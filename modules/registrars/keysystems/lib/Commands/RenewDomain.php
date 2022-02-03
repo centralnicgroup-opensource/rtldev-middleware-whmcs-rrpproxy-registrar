@@ -7,6 +7,9 @@ use WHMCS\Domain\Registrar\Domain;
 use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
 use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
 
+/**
+ * @see https://wiki.rrpproxy.net/api/api-command/RenewDomain
+ */
 class RenewDomain extends CommandBase
 {
     private ZoneModel $zoneInfo;
@@ -32,11 +35,15 @@ class RenewDomain extends CommandBase
     public function execute(): void
     {
         if (!$this->zoneInfo->supports_renewals) {
-            $this->api->args["RENEWALMODE"] = "RENEWONCE";
-            $this->setCommandName("SetDomainRenewalMode");
-        } else {
-            $this->api->args["PERIOD"] = $this->params["regperiod"];
+            $renewalMode = new SetDomainRenewalMode($this->params);
+            $renewalMode->setRenewOnce();
+            $renewalMode->execute();
+            return;
         }
+
+        $this->api->args["PERIOD"] = $this->params["regperiod"];
+        $expiryDate = $this->domain->expirydate;
+        $this->api->args["EXPIRATION"] = $expiryDate->setTimezone('UTC')->year;
         parent::execute();
     }
 }

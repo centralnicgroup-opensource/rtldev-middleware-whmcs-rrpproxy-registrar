@@ -14,6 +14,12 @@ class SetDomainRenewalMode extends CommandBase
         $this->api->args["DOMAIN"] = $this->domainName;
     }
 
+    public function setRenewOnce(): SetDomainRenewalMode
+    {
+        $this->api->args["RENEWALMODE"] = "RENEWONCE";
+        return $this;
+    }
+
     /**
      * @return $this
      */

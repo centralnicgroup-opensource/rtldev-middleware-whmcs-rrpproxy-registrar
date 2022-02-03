@@ -326,9 +326,6 @@ function keysystems_TransferDomain(array $params): array
         }
 
         $transfer = new TransferDomain($params);
-        if ($check->userTransferRequired) {
-            $transfer->api->args["ACTION"] = "USERTRANSFER";
-        }
         $transfer->execute();
         if (!empty($transfer->getErrors())) {
             return ["error" => $transfer->getErrors()];
@@ -787,9 +784,9 @@ function keysystems_RequestDelete(array $params): array
 {
     if ($params["DeleteMode"] == "ImmediateIfPossible") {
         try {
-                $delete = new DeleteDomain($params);
-                $delete->execute();
-                return ['success' => true];
+            $delete = new DeleteDomain($params);
+            $delete->execute();
+            return ['success' => true];
         } catch (Exception $ex) {
             // We fallback to setting renewal mode
         }

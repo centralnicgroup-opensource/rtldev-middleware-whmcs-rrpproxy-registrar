@@ -27,7 +27,9 @@ class TransferDomain extends CommandBase
         if ($this->zoneInfo->renews_on_transfer) {
             $this->api->args["PERIOD"] = $params["regperiod"];
         }
-        $this->api->args["AUTH"] = $params["eppcode"];
+        if ($params["eppcode"]) {
+            $this->api->args["AUTH"] = $params["eppcode"];
+        }
 //        Disabled as for example .it does not like this
 //        if ($this->zoneInfo->needs_trade) {
 //            $this->api->args["ACCEPT-TRADE"] = 1;

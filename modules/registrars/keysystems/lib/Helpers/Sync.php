@@ -134,9 +134,8 @@ class Sync
     }
 
     /**
-     * Available statuses: 'Pending', 'Pending Registration', 'Pending Transfer', 'Active', 'Grace', 'Redemption',
-     * 'Expired','Cancelled','Fraud','Transferred Away'
-     * @param array<string> $statusValues
+     * @param array<string> $statusValues Available statuses: 'Pending', 'Pending Registration', 'Pending Transfer',
+     * 'Active', 'Grace', 'Redemption', 'Expired','Cancelled', 'Fraud', 'Transferred Away'
      * @param ?bool $doNotRenew
      * @return array<string>
      */

@@ -19,7 +19,6 @@ class QueryDomainList extends CommandBase
         $this->api->args["WIDE"] = 1;
         $this->api->args["ORDER"] = "ASC";
         $this->api->args["ORDERBY"] = "DOMAIN";
-        $this->api->args["TYPE"] = "ALL";
     }
 
     /**

@@ -31,8 +31,6 @@ class StatusDomain extends CommandBase
     public ?string $vatId;
     public bool $isTrusteeUsed;
 
-    private ZoneModel $zoneInfo;
-
     /**
      * @param array<string, mixed> $params
      * @throws Exception
@@ -44,8 +42,6 @@ class StatusDomain extends CommandBase
         $this->api->args["DOMAIN"] = $this->domainName;
 
         $this->execute();
-
-        $this->zoneInfo = ZoneInfo::get($params);
 
         $this->isActive = (bool)preg_match("/ACTIVE/i", $this->api->properties["STATUS"][0]);
         $this->isPremium = isset($this->api->properties["X-FEE-CLASS"][0]) && $this->api->properties["X-FEE-CLASS"][0] === "premium";
@@ -127,7 +123,12 @@ class StatusDomain extends CommandBase
         $expirationDate = $this->api->castDate($this->api->properties["PAIDUNTILDATE"][0]);
 
         if ($this->renewalMode == "RENEWONCE") {
-            $periods = ZoneInfo::formatPeriods($this->zoneInfo->periods);
+            try {
+                $zoneInfo = ZoneInfo::get($this->params);
+                $periods = ZoneInfo::formatPeriods($zoneInfo->periods);
+            } catch (Exception $ex) {
+                $periods = [1];
+            }
             $ts = strtotime($expirationDate["long"] . " +$periods[0] year");
         } else {
             $ts = $expirationDate["ts"];

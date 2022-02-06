@@ -89,11 +89,10 @@ class APIClient
         }
 
         $requestArgs = array_merge(["command" => $command], $this->args);
-        $responses = [];
         if ($getAllPages) {
             $responses = $cl->requestAllResponsePages($requestArgs);
         } else {
-            $responses[] = $cl->request($requestArgs);
+            $responses = [$cl->request($requestArgs)];
         }
 
         foreach ($responses as $response) {
@@ -104,8 +103,8 @@ class APIClient
             $this->responseList[] = $responseHashed;
             $this->propertiesList[] = $responseHashed["PROPERTY"] ?? [];
         }
-        $this->response = $this->responseList[0];
-        $this->properties = $this->propertiesList[0];
+        $this->response = end($this->responseList);
+        $this->properties = end($this->propertiesList);
     }
 
     /**

@@ -103,8 +103,8 @@ class APIClient
             $this->responseList[] = $responseHashed;
             $this->propertiesList[] = $responseHashed["PROPERTY"] ?? [];
         }
-        $this->response = end($this->responseList);
-        $this->properties = end($this->propertiesList);
+        $this->response = end($this->responseList) ?: $this->responseList[0];
+        $this->properties = end($this->propertiesList) ?: $this->propertiesList[0];
     }
 
     /**

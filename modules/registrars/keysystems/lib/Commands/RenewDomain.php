@@ -6,6 +6,7 @@ use Exception;
 use WHMCS\Domain\Registrar\Domain;
 use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
 use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
+use Illuminate\Database\Capsule\Manager as DB;
 
 /**
  * @see https://wiki.rrpproxy.net/api/api-command/RenewDomain
@@ -34,6 +35,29 @@ class RenewDomain extends CommandBase
      */
     public function execute(): void
     {
+        // Fake renewal if current expiration date is already what renewal expects
+        if ($this->params['RenewProtection']) {
+            $dueDate = DB::table('tbldomains')
+                ->where('domain', '=', $this->domainName)
+                ->value('nextduedate');
+            if ($this->domain->expirydate >= $dueDate) {
+                $msg = "Renewal for domain $this->domainName was skipped because the domain was already renewed.\n";
+                $msg .= "Current expiration date: $this->domain->expirydate\n";
+
+                localAPI('LogActivity', ['description' => "[keysystems] $msg"]);
+
+                $command = "sendadminemail";
+                $values["customsubject"] = "RRPproxy Renewal Skipped";
+                $values["custommessage"] = nl2br($msg);
+                $values["type"] = "system";
+                $values["mergefields"] = [];
+                $values["deptid"] = 0;
+
+                localAPI($command, $values);
+                return;
+            }
+        }
+
         if (!$this->zoneInfo->supports_renewals) {
             $renewalMode = new SetDomainRenewalMode($this->params);
             $renewalMode->setRenewOnce();

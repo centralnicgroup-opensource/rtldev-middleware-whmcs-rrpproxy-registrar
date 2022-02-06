@@ -152,6 +152,12 @@ function keysystems_getConfigArray(array $params): array
             "Default" => true,
             "Description" => "Enable ID Protection on TLD pricing sync for compatible TLDs"
         ],
+        'RenewProtection' => [
+            'FriendlyName' => 'Renewal Protection',
+            'Type' => 'yesno',
+            "Default" => false,
+            'Description' => 'Fakes renewal when domain expiration date is already ahead of the new domain due date'
+        ],
         'DeleteMode' => [
             'FriendlyName' => 'Domain deletion mode',
             'Type' => 'dropdown',

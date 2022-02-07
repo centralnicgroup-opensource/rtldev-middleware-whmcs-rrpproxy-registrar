@@ -4,6 +4,7 @@ namespace WHMCS\Module\Registrar\RRPproxy\Helpers;
 
 use Exception;
 use Illuminate\Database\Capsule\Manager as DB;
+use WHMCS\Module\Registrar\RRPproxy\Commands\QueryDNSZoneList;
 use WHMCS\Module\Registrar\RRPproxy\Commands\QueryDomainList;
 use WHMCS\Module\Registrar\RRPproxy\Commands\SetDomainRenewalMode;
 
@@ -18,25 +19,33 @@ class Sync
      */
     private int $expirationWarningTs;
     /**
-     * @var array<array<string, mixed>>
+     * @var array<array<string, string>>
      */
     private array $reactivatedDomains;
     /**
-     * @var array<array<string, mixed>>
+     * @var array<array<string, string>>
      */
     private array $expiringDomains;
     /**
-     * @var array<array<string, mixed>>
+     * @var array<array<string, string>>
      */
     private array $cancelledDomains;
     /**
-     * @var array<array<string, mixed>>
+     * @var array<array<string, string>>
      */
     private array $notRenewingDomains;
     /**
-     * @var array<string, string>
+     * @var array<array<string, string>>
      */
     private array $failedDomains;
+    /**
+     * @var array<array<string, string>>
+     */
+    private array $orphanDomains;
+    /**
+     * @var array<array<string, string>>
+     */
+    private array $orphanDnsZones;
 
     /**
      * @param array<string, mixed> $params
@@ -65,6 +74,19 @@ class Sync
      */
     public function sync(): void
     {
+        $dnsZones = [];
+        try {
+            $dnsList = new QueryDNSZoneList($this->params);
+            $dnsList->execute();
+            foreach ($dnsList->api->propertiesList as $properties) {
+                foreach ($properties["DNSZONE"] as $domain) {
+                    $dnsZones[] = $domain;
+                }
+            }
+        } catch (Exception $ex) {
+            // We ignore errors - perhaps KeyDNS not activated
+        }
+
         try {
             $currentTs = time();
             $expiredDomains = $this->getDomainsWithStatus(["Expired", "Grace", "Redemption"]);
@@ -75,8 +97,10 @@ class Sync
             $domainList = new QueryDomainList($this->params);
             $domainList->execute();
 
+            $domains = [];
             foreach ($domainList->api->propertiesList as $properties) {
                 foreach ($properties["DOMAIN"] as $key => $domain) {
+                    $domains[] = $domain;
                     try {
                         $renewalMode = $properties["RENEWALMODE"][$key];
                         /*
@@ -124,9 +148,19 @@ class Sync
                             $this->expiringDomains[] = $domainData;
                         }
                     } catch (Exception $ex) {
-                        $this->failedDomains[$domain] = $ex->getMessage();
+                        $this->failedDomains[] = ["domain" => $domain, "reason" => $ex->getMessage()];
                     }
                 }
+            }
+
+            $orphanDomains = array_diff(array_merge($activeDomains, $pendingCancellation), $domains);
+            foreach ($orphanDomains as $orphanDomain) {
+                $this->orphanDomains[] = ["domain" => $orphanDomain];
+            }
+
+            $orphanZones = array_diff($dnsZones, $domains);
+            foreach ($orphanZones as $orphanZone) {
+                $this->orphanDnsZones[] = ["zone" => $orphanZone];
             }
         } catch (Exception $ex) {
             echo "ERROR: failed to get domain list! {$ex->getMessage()}\n";
@@ -170,48 +204,59 @@ class Sync
         $html = "";
 
         if (!empty($this->reactivatedDomains)) {
-            $html .= "The following domains were expired in WHMCS but their expiration date at RRPproxy actually is in the future, so they have been reactivated:";
-            $html .= "<table><tr><th>Domain</th><th>Expiration date</th></tr>";
-            foreach ($this->reactivatedDomains as $reactivatedDomain) {
-                $html .= "<tr><td>{$reactivatedDomain["domain"]}</td><td>{$reactivatedDomain["expirationDate"]}</td></tr>";
-            }
-            $html .= "</tr></table><hr />";
+            $html .= $this->renderTable(
+                "Domains in expired/grace/redemption status but active at RRPproxy - Reactivated!",
+                $this->reactivatedDomains,
+                ["domain", "expirationDate"]
+            );
         }
 
         if (!empty($this->cancelledDomains)) {
-            $html .= "The following domains were cancelled in WHMCS and thus have been marked for expiration at RRPproxy:";
-            $html .= "<table><tr><th>Domain</th><th>Expiration date</th></tr>";
-            foreach ($this->cancelledDomains as $cancelledDomain) {
-                $html .= "<tr><td>{$cancelledDomain["domain"]}</td><td>{$cancelledDomain["expirationDate"]}</td></tr>";
-            }
-            $html .= "</tr></table><hr />";
+            $html .= $this->renderTable(
+                "Cancelled domains - Marked for automatic expiration at RRPproxy!",
+                $this->cancelledDomains,
+                ["domain", "expirationDate"]
+            );
         }
 
         if (!empty($this->notRenewingDomains)) {
-            $html .= "The following domains are active in WHMCS but marked for expiration or deletion in RRPproxy:";
-            $html .= "<table><tr><th>Domain</th><th>Renewal mode</th></th><th>Expiration date</th></tr>";
-            foreach ($this->notRenewingDomains as $notRenewingDomain) {
-                $html .= "<tr><td>{$notRenewingDomain["domain"]}</td><td>{$notRenewingDomain["renewalMode"]}</td><td>{$notRenewingDomain["expirationDate"]}</td></tr>";
-            }
-            $html .= "</tr></table><hr />";
+            $html .= $this->renderTable(
+                "Domains active in WHMCS but marked for expiration or deletion at RRPproxy",
+                $this->notRenewingDomains,
+                ["domain", "renewalMode", "expirationDate"]
+            );
+        }
+
+        if (!empty($this->orphanDomains)) {
+            $html .= $this->renderTable(
+                "Domains active in WHMCS but not existing at RRPproxy",
+                $this->orphanDomains,
+                ["domain"]
+            );
+        }
+
+        if (!empty($this->orphanDnsZones)) {
+            $html .= $this->renderTable(
+                "DNS Zones for not existing domains",
+                $this->orphanDnsZones,
+                ["zone"]
+            );
         }
 
         if (!empty($this->expiringDomains)) {
-            $html .= "The following domains are expiring within the next 10 days:";
-            $html .= "<table><tr><th>Domain</th><th>Renewal mode</th></th><th>Expiration date</th></tr>";
-            foreach ($this->expiringDomains as $expiringDomain) {
-                $html .= "<tr><td>{$expiringDomain["domain"]}</td><td>{$expiringDomain["renewalMode"]}</td><td>{$expiringDomain["expirationDate"]}</td></tr>";
-            }
-            $html .= "</tr></table><hr />";
+            $html .= $this->renderTable(
+                "Domains are expiring within the next 10 days",
+                $this->expiringDomains,
+                ["domain", "renewalMode", "expirationDate"]
+            );
         }
 
         if (!empty($this->failedDomains)) {
-            $html .= "The following domains have failed the checks:";
-            $html .= "<table><tr><th>Domain</th><th>Reason</th></tr>";
-            foreach ($this->failedDomains as $failedDomain => $reason) {
-                $html .= "<tr><td>$failedDomain</td><td>$reason</li></td></tr>";
-            }
-            $html .= "</tr></table><hr />";
+            $html .= $this->renderTable(
+                "The following domains have failed the consistency checks",
+                $this->failedDomains,
+                ["domain", "reason"]
+            );
         }
 
         if (!$html) {
@@ -227,5 +272,34 @@ class Sync
 
         localAPI($command, $values);
         return true;
+    }
+
+    /**
+     * @param string $description
+     * @param array<array<string, mixed>> $data
+     * @param array<string> $keys
+     * @return string
+     */
+    private function renderTable(string $description, array $data, array $keys): string
+    {
+        $html = $description . ":";
+        $html .= "<table><tr>";
+        foreach ($keys as $header) {
+            $words = preg_split('/(?=[A-Z])/', $header);
+            if ($words !== false) {
+                $header = ucwords(implode(' ', $words));
+            }
+            $html .= "<th>$header</th>";
+        }
+        $html .= "</tr>";
+        foreach ($data as $row) {
+            $html .= "<tr>";
+            foreach ($keys as $key) {
+                $html .= "<td>$row[$key]</td>";
+            }
+            $html .= "</tr>";
+        }
+        $html .= "</table><hr />";
+        return $html;
     }
 }

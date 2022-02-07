@@ -156,7 +156,7 @@ function keysystems_getConfigArray(array $params): array
             'FriendlyName' => 'Renewal Protection',
             'Type' => 'yesno',
             "Default" => false,
-            'Description' => 'Fakes renewal when domain expiration date is already ahead of the new domain due date'
+            'Description' => 'Skips renewal when domain expiration date is already ahead of the new due date'
         ],
         'DeleteMode' => [
             'FriendlyName' => 'Domain deletion mode',
@@ -174,7 +174,7 @@ function keysystems_getConfigArray(array $params): array
             'FriendlyName' => 'Daily Cron',
             'Type' => 'yesno',
             "Default" => false,
-            'Description' => 'Makes some daily checks and sends an e-mail report'
+            'Description' => 'Makes some daily consistency checks and sends an e-mail report'
         ],
         'TestMode' => [
             'Type' => 'yesno',
@@ -949,7 +949,10 @@ function keysystems_TransferSync(array $params): array
         if (count($diffNameservers) > 0) {
             $i = 1;
             foreach ($orderNameservers as $nameserver) {
-                $modifyDomain->params["ns$i"] = $nameserver;
+                if (!$nameserver) {
+                    continue;
+                }
+                $modifyDomain->params["ns" . $i++] = $nameserver;
             }
             $modifyDomain->setNameServers();
         }

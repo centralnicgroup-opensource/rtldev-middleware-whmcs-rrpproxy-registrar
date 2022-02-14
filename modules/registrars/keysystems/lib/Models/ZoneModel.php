@@ -73,6 +73,14 @@ class ZoneModel extends Model
                 self::dropIfExists();
                 return false;
             }
+            $hasNull = DB::table(self::$tblName)
+                ->whereNull('grace_days')
+                ->orWhereNull('redemption_days')
+                ->exists();
+            if ($hasNull) {
+                self::dropIfExists();
+                return false;
+            }
             return true;
         }
         return false;
@@ -94,8 +102,8 @@ class ZoneModel extends Model
                 $table->bigIncrements('id');
                 $table->string('zone', 45);
                 $table->string('periods', 50);
-                $table->integer('grace_days')->nullable();
-                $table->integer('redemption_days')->nullable();
+                $table->integer('grace_days');
+                $table->integer('redemption_days');
                 $table->boolean('epp_required');
                 $table->boolean('id_protection');
                 $table->boolean('supports_renewals');

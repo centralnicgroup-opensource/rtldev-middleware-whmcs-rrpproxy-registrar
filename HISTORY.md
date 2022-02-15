@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.2...v1.0.3) (2022-02-15)
+
+
+### Bug Fixes
+
+* **zoneinfo:** proper default periods and updated initial import ([d20596c](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d20596c09f9bb23c89d77a3574f7e3858c0e60b3))
+
 ## [1.0.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.1...v1.0.2) (2022-01-31)
 
 

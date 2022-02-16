@@ -104,8 +104,8 @@ class MailFwd extends CommandBase
             try {
                 $this->api->args = ["from" => $from, "to" => $to];
                 $this->api->call("DeleteMailFwd");
-            } catch (Exception $e) {
-                $this->setError($e->getMessage());
+            } catch (Exception $ex) {
+                $this->setError($ex->getMessage());
             }
         }
     }
@@ -119,8 +119,8 @@ class MailFwd extends CommandBase
             try {
                 $this->api->args = ["from" => $from, "to" => $to];
                 $this->api->call("AddMailFwd");
-            } catch (Exception $e) {
-                $this->setError($e->getMessage());
+            } catch (Exception $ex) {
+                $this->setError($ex->getMessage());
             }
         }
     }

@@ -16,11 +16,19 @@ class APIClient
     /**
      * @var array<string, mixed>
      */
-    public array $response;
+    public array $response = [];
+    /**
+     * @var array<int, array<string, mixed>>
+     */
+    public array $responseList = [];
     /**
      * @var array<string, mixed>
      */
     public array $properties;
+    /**
+     * @var array<int, array<string, mixed>>
+     */
+    public array $propertiesList;
     /**
      * @var Domain
      */
@@ -52,9 +60,10 @@ class APIClient
     /**
      * Make an API request using the provided command and return response in Hash Format
      * @param string $command API command to request
+     * @param bool $getAllPages Use with caution and only with List commands
      * @throws Exception
      */
-    public function call(string $command): void
+    public function call(string $command, bool $getAllPages = false): void
     {
         $this->command = $command;
         $cl = ClientFactory::getClient([
@@ -79,13 +88,38 @@ class APIClient
             $cl->setProxy($this->params["ProxyServer"]);
         }
 
-        $response = $cl->request(array_merge(["command" => $command], $this->args));
-        $this->response = $response->getHash();
-
-        if (!preg_match('/^2/', $this->response["CODE"])) {
-            throw new Exception($this->response["DESCRIPTION"]);
+        $requestArgs = array_merge(["command" => $command], $this->args);
+        if ($getAllPages) {
+            $responses = $cl->requestAllResponsePages($requestArgs);
+        } else {
+            $responses = [$cl->request($requestArgs)];
         }
 
-        $this->properties = $this->response["PROPERTY"] ?? [];
+        foreach ($responses as $response) {
+            $responseHashed = $response->getHash();
+            if (!preg_match('/^2/', $responseHashed["CODE"])) {
+                throw new Exception($responseHashed["DESCRIPTION"]);
+            }
+            $this->responseList[] = $responseHashed;
+            $this->propertiesList[] = $responseHashed["PROPERTY"] ?? [];
+        }
+        $this->response = end($this->responseList) ?: $this->responseList[0];
+        $this->properties = end($this->propertiesList) ?: $this->propertiesList[0];
+    }
+
+    /**
+     * Cast our UTC API timestamps to local timestamp string and unix timestamp
+     * @param string $date API timestamp (YYYY-MM-DD HH:ii:ss)
+     * @return array<string, mixed>
+     */
+    public function castDate(string $date): array
+    {
+        $utcDate = str_replace(" ", "T", $date) . "Z"; //RFC 3339 / ISO 8601
+        $ts = strtotime($utcDate);
+        return [
+            "ts" => $ts,
+            "short" => date("Y-m-d", $ts === false ? 0 : $ts),
+            "long" => date("Y-m-d H:i:s", $ts === false ? 0 : $ts)
+        ];
     }
 }

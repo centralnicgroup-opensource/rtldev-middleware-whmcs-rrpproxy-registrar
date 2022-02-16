@@ -27,19 +27,20 @@ class ModifyDomain extends CommandBase
     }
 
     /**
-     * @return void
+     * @return $this
      */
-    public function setNameServers(): void
+    public function setNameServers(): ModifyDomain
     {
         for ($i = 1; $i <= 5; $i++) {
             $this->api->args["NAMESERVER" . ($i - 1)] = $this->params["ns$i"];
         }
+        return $this;
     }
 
     /**
-     * @return void
+     * @return $this
      */
-    public function setRegistrarLock(): void
+    public function setRegistrarLock(): ModifyDomain
     {
         if (isset($this->params['lockenabled'])) {
             $this->api->args["TRANSFERLOCK"] = (int) $this->params['lockenabled'] == "locked";
@@ -48,57 +49,63 @@ class ModifyDomain extends CommandBase
         } else {
             $this->api->args["TRANSFERLOCK"] = 1;
         }
+        return $this;
     }
 
     /**
-     * @return void
+     * @return $this
      */
-    public function setWhoisPrivacy(): void
+    public function setWhoisPrivacy(): ModifyDomain
     {
         $this->api->args["X-WHOISPRIVACY"] = (int) $this->params["protectenable"];
+        return $this;
     }
 
     /**
      * @param string $contactHandle
-     * @return void
+     * @return $this
      */
-    public function setOwnerContact(string $contactHandle): void
+    public function setOwnerContact(string $contactHandle): ModifyDomain
     {
         $this->api->args["OWNERCONTACT0"] = $contactHandle;
+        return $this;
     }
 
     /**
      * @param string $contactHandle
-     * @return void
+     * @return $this
      */
-    public function setAdminContact(string $contactHandle): void
+    public function setAdminContact(string $contactHandle): ModifyDomain
     {
         $this->api->args["ADMINCONTACT0"] = $contactHandle;
+        return $this;
     }
 
     /**
      * @param string $contactHandle
-     * @return void
+     * @return $this
      */
-    public function setBillingContact(string $contactHandle): void
+    public function setBillingContact(string $contactHandle): ModifyDomain
     {
         $this->api->args["BILLINGCONTACT0"] = $contactHandle;
+        return $this;
     }
 
     /**
      * @param string $contactHandle
-     * @return void
+     * @return $this
      */
-    public function setTechContact(string $contactHandle): void
+    public function setTechContact(string $contactHandle): ModifyDomain
     {
         $this->api->args["TECHCONTACT0"] = $contactHandle;
+        return $this;
     }
 
     /**
      * @param array<array<string>> $records
-     * @return void
+     * @return $this
      */
-    public function setDnssecRecords(array $records): void
+    public function setDnssecRecords(array $records): ModifyDomain
     {
         $i = 0;
         foreach ($records as $record) {
@@ -107,13 +114,15 @@ class ModifyDomain extends CommandBase
                 $this->api->args["DNSSEC" . $i++] = implode(" ", $record);
             }
         }
+        return $this;
     }
 
     /**
-     * @return void
+     * @return $this
      */
-    public function setDnssecDelete(): void
+    public function setDnssecDelete(): ModifyDomain
     {
         $this->api->args['DNSSECDELALL'] = 1;
+        return $this;
     }
 }

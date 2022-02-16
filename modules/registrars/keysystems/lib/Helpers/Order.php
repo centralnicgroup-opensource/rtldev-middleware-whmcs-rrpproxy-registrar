@@ -26,7 +26,9 @@ class Order
             $order = get_object_vars($order);
             $this->userId = $order["userid"];
             $this->contactId = $order["contactid"];
-            $this->nameServers = explode(",", $order["nameservers"]);
+            $nameServers = trim($order["nameservers"]);
+            $nameServersArray = $nameServers ? explode(",", $nameServers) : [];
+            $this->nameServers = $nameServersArray;
         }
     }
 

@@ -61,9 +61,9 @@ class ZoneInfo
 
             $data = [
                 'zone' => $tld,
-                'periods' => $zoneInfo->api->properties['PERIODS'][0],
-                'grace_days' => $zoneInfo->api->properties['AUTORENEWGRACEPERIODDAYS'][0],
-                'redemption_days' => $zoneInfo->api->properties['REDEMPTIONPERIODDAYS'][0],
+                'periods' => $zoneInfo->api->properties['PERIODS'][0] ?: $zoneInfo->api->properties['REGISTRATIONPERIODS'][0],
+                'grace_days' => $zoneInfo->api->properties['AUTORENEWGRACEPERIODDAYS'][0] ?: 0,
+                'redemption_days' => $zoneInfo->api->properties['REDEMPTIONPERIODDAYS'][0] ?: 0,
                 'epp_required' => $zoneInfo->api->properties['AUTHCODE'][0] == 'required',
                 'id_protection' => $zoneInfo->api->properties['RRPSUPPORTSWHOISPRIVACY'][0] || $zoneInfo->api->properties['SUPPORTSTRUSTEE'][0],
                 'supports_renewals' => $zoneInfo->api->properties['RENEWALPERIODS'][0] != 'n/a',

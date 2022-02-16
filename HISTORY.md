@@ -1,3 +1,20 @@
+# [1.1.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.3...v1.1.0) (2022-02-16)
+
+
+### Bug Fixes
+
+* **renewdomain:** reintroduced EXPIRATION parameter - correctly this time ([25b9907](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/25b9907ff0ead736d37fcd4a450d8a0426cb5c32))
+* **StatusDomain:** handle ZoneInfo failure gracefully ([4b48dda](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/4b48dda811d2b74ababb997cd216a9e98ad527c2))
+* **statusdomain:** use PAIDUNTILDATE as expiration date which makes most sense for WHMCS ([105beb9](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/105beb9aa0a117c38e99a27167d07a682520deae))
+* **transfer:** remove unnecessary code for CheckDomainTransfer handling ([1eec5da](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/1eec5da7a38e5087ae1dda0fc2fdf32514643434))
+* **transfersync:** do not update nameservers when none were specified in transfer order ([38fda99](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/38fda99f570d166e17e476eccede4d9a6bd947fe))
+
+
+### Features
+
+* **DomainRenew:** implement renew protection (optional) ([5b04c83](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/5b04c8324ac1470e7dcabfead6fddf378ba6315d))
+* **sync:** improve expiration date handling and add daily cron sync ([d558404](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d55840466953bc118a0e5d5246ec0e8d73bbac3e))
+
 ## [1.0.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.2...v1.0.3) (2022-02-15)
 
 

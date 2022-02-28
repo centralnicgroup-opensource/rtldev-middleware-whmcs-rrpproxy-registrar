@@ -4,7 +4,6 @@ namespace WHMCS\Module\Registrar\RRPproxy\Commands;
 
 use Exception;
 use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
-use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
 
 class StatusDomain extends CommandBase
 {
@@ -45,7 +44,7 @@ class StatusDomain extends CommandBase
 
         $this->isActive = (bool)preg_match("/ACTIVE/i", $this->api->properties["STATUS"][0]);
         $this->isPremium = isset($this->api->properties["X-FEE-CLASS"][0]) && $this->api->properties["X-FEE-CLASS"][0] === "premium";
-        $this->renewalMode = $this->api->properties['RENEWALMODE'][0];
+        $this->renewalMode = $this->api->properties['RENEWALMODE'][0] ?: "DEFAULT";
         $this->setNameServers();
         $this->transferLock = (bool) @$this->api->properties["TRANSFERLOCK"][0];
         $this->idProtection = @$this->api->properties["X-WHOIS-PRIVACY"][0] > 0;
@@ -120,18 +119,22 @@ class StatusDomain extends CommandBase
      */
     private function setExpiryData(): void
     {
-        $expirationDate = $this->api->castDate($this->api->properties["PAIDUNTILDATE"][0]);
-
-        if ($this->renewalMode == "RENEWONCE") {
-            try {
-                $zoneInfo = ZoneInfo::get($this->params);
-                $periods = ZoneInfo::formatPeriods($zoneInfo->periods);
-            } catch (Exception $ex) {
-                $periods = [1];
-            }
-            $ts = strtotime($expirationDate["long"] . " +$periods[0] year");
+        $paidUntilDate = $this->api->properties["PAIDUNTILDATE"][0];
+        if ($paidUntilDate === null) {
+            $ts = 0;
         } else {
-            $ts = $expirationDate["ts"];
+            $expirationDate = $this->api->castDate($paidUntilDate);
+            if ($this->renewalMode == "RENEWONCE") {
+                try {
+                    $zoneInfo = ZoneInfo::get($this->params);
+                    $periods = ZoneInfo::formatPeriods($zoneInfo->periods);
+                } catch (Exception $ex) {
+                    $periods = [1];
+                }
+                $ts = strtotime($expirationDate["long"] . " +$periods[0] year");
+            } else {
+                $ts = $expirationDate["ts"];
+            }
         }
         $this->expirationDate = date("Y-m-d H:i:s", $ts);
         $this->isExpired = strtotime("now") > $ts;

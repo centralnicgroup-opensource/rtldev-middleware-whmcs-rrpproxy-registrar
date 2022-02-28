@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.1.0...v1.1.1) (2022-02-28)
+
+
+### Bug Fixes
+
+* **statusdomain:** handle case when not returning all info for domains pending deletion ([1e764a6](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/1e764a647357b4cf2d180bd260651cd705bfb3ae))
+
 # [1.1.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.0.3...v1.1.0) (2022-02-16)
 
 

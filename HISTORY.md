@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.1.1...v1.2.0) (2022-03-03)
+
+
+### Bug Fixes
+
+* **additionalfields:** fix additional fields not being used anymore ([41880f5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/41880f57d6656ce1c2202b82adc929e3a1836aff))
+
+
+### Features
+
+* **tld-hu:** implement additional fields for .hu tld ([b47f550](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/b47f55076484b44139cd0356d0ee3baf3a2a099d))
+
 ## [1.1.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.1.0...v1.1.1) (2022-02-28)
 
 

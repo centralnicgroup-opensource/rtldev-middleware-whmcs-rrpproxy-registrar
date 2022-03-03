@@ -49,7 +49,7 @@ class AddDomain extends CommandBase
      */
     public function execute(): void
     {
-        $fields = new AdditionalFields($this->params["domainObj"]->getLastTLDSegment());
+        $fields = new AdditionalFields($this->params);
         $this->api->args = array_merge($this->api->args, $fields->fields);
         if ($fields->isDomainApplication) {
             $this->setCommandName("AddDomainApplication");

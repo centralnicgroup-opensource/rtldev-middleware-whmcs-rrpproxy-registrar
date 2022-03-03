@@ -60,7 +60,7 @@ class TransferDomain extends CommandBase
         }
 
         // Handle additional fields
-        $fields = new AdditionalFields($params["domainObj"]->getLastTLDSegment());
+        $fields = new AdditionalFields($params);
         foreach ($fields->fields as $key => $val) {
             $this->api->args[$key] = $val;
         }

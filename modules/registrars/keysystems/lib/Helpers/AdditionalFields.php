@@ -10,12 +10,16 @@ class AdditionalFields
     public array $fields;
     public bool $isDomainApplication;
 
-    public function __construct(string $tld)
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function __construct(array $params)
     {
+        $tld = $params["domainObj"]->getLastTLDSegment();
         $extensions = [];
         $domainApplication = false;
-        $extensions_path = implode(DIRECTORY_SEPARATOR, [__DIR__, "tlds", $tld . ".php"]);
-        if (file_exists($extensions_path)) {
+        $extensions_path = realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, "..", "..", "tlds", $tld . ".php"]));
+        if ($extensions_path !== false && file_exists($extensions_path)) {
             include $extensions_path;
         }
         $this->fields = $extensions;

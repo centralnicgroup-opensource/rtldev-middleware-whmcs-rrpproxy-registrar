@@ -46,3 +46,26 @@ $additionaldomainfields['.ro.ro'] = $additionaldomainfields['.ro'];
 $additionaldomainfields['.store.ro'] = $additionaldomainfields['.ro'];
 $additionaldomainfields['.tm.ro'] = $additionaldomainfields['.ro'];
 $additionaldomainfields['.www.ro'] = $additionaldomainfields['.ro'];
+
+//.hu
+$additionaldomainfields[".hu"][] = [
+    "Name" => "Accept Trustee Service",
+    "LangVar" => "hutldtac",
+    "Type" => "tickbox",
+    "Description" => "Required if owner not in the EU"
+];
+$additionaldomainfields[".hu"][] = [
+    "Name" => "ID Card or Passport Number",
+    "LangVar" => "hutldpassport",
+    "Type" => "text",
+    "Default" => "",
+    "Description" => "Required for organisations and natural persons"
+];
+$additionaldomainfields[".hu"][] = [
+    "Name" => "VAT Number",
+    "LangVar" => "hutldtaxid",
+    "Type" => "text",
+    "Size" => "20",
+    "Default" => "",
+    "Description" => "Required for organisations"
+];

@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.2.0...v1.2.1) (2022-03-04)
+
+
+### Bug Fixes
+
+* **zoneinfo:** zone info should be an object for migrator ([543fee2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/543fee2938d271b08ddcc7f927c8b0fbbd53843a))
+
 # [1.2.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.1.1...v1.2.0) (2022-03-03)
 
 

@@ -1272,9 +1272,9 @@ function keysystems_ClientAreaAllowedFunctions(array $params): array
  * Return Zone Configuration / Feature data
  * @param array<string, mixed> $params common module parameters
  * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- * @return array<string, mixed>
+ * @return object|null
  */
-function keysystems_GetZoneFeatures(array $params): array
+function keysystems_GetZoneFeatures(array $params): ?object
 {
     return ZoneInfo::getForMigrator($params);
 }

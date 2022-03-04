@@ -37,6 +37,7 @@
     },
     "require": {
         "php": "^7.4",
+        "ext-json": "*",
         "centralnic-reseller/php-sdk": "^7.0"
     },
     "require-dev": {

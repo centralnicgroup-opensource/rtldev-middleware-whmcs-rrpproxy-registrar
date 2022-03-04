@@ -110,9 +110,9 @@ class ZoneInfo
 
     /**
      * @param array<string, mixed> $params
-     * @return array<string, mixed>
+     * @return object|null
      */
-    public static function getForMigrator(array $params): array
+    public static function getForMigrator(array $params): ?object
     {
         $domainName = $params["sld"] . "." . $params["tld"];
         try {
@@ -178,10 +178,10 @@ class ZoneInfo
                     "changeBy" => null
                 ]
             ];
-            return $data;
+            $json = json_encode($data);
+            return $json ? json_decode($json) : null;
         } catch (Exception $ex) {
-            //TODO handle this somehow
-            return [];
+            return null;
         }
     }
 }

@@ -69,3 +69,21 @@ $additionaldomainfields[".hu"][] = [
     "Default" => "",
     "Description" => "Required for organisations"
 ];
+
+//.pt
+$additionaldomainfields[".pt"][] = [
+    "Name" => "Owner Identification",
+    "LangVar" => "pttldownerid",
+    "Type" => "text",
+    "Size" => "20",
+    "Default" => "",
+    "Description" => "Fiscal ID (VAT number) of the person or company that you are trying to register without the country code"
+];
+$additionaldomainfields[".pt"][] = [
+    "Name" => "Tech Identification",
+    "LangVar" => "pttldtechid",
+    "Type" => "text",
+    "Size" => "20",
+    "Default" => "",
+    "Description" => "Fiscal ID (VAT number) of the person or company that you are inserting as tech-contact without the country code"
+];

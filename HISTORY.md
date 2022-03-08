@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.2.1...v1.3.0) (2022-03-08)
+
+
+### Features
+
+* **tld-pt:** implement additional fields for .pt tld ([84a738e](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/84a738e1ef2904cf5c4a1602b67da413863a393e))
+
 ## [1.2.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.2.0...v1.2.1) (2022-03-04)
 
 

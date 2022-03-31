@@ -107,7 +107,7 @@ class StatusDomain extends CommandBase
         }
         foreach ($names as $prop) {
             if (!empty($this->api->properties[$prop])) {
-                $this->vatId = $this->api->properties[$prop];
+                $this->vatId = $this->api->properties[$prop][0];
             }
         }
         $this->vatId = null;

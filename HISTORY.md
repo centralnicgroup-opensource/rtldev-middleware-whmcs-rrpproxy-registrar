@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.0...v1.3.1) (2022-03-31)
+
+
+### Bug Fixes
+
+* **vat:** fix getting VAT ID in domain status ([74b2290](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/74b22906585bd2f9d8ffde317abbb9c999fb95d6))
+
 # [1.3.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.2.1...v1.3.0) (2022-03-08)
 
 

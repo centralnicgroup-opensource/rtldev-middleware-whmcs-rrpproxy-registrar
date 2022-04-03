@@ -99,7 +99,7 @@ class Sync
 
             $domains = [];
             foreach ($domainList->api->propertiesList as $properties) {
-                foreach ($properties["DOMAIN"] as $key => $domain) {
+                foreach ($properties["DOMAINIDN"] as $key => $domain) {
                     $domains[] = $domain;
                     try {
                         $renewalMode = $properties["RENEWALMODE"][$key];

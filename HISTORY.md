@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.1...v1.3.2) (2022-04-03)
+
+
+### Bug Fixes
+
+* **sync:** handle IDN domains properly in cron ([d0a1274](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/d0a1274091cbb6a32b71cedfb6f146b428d737bb))
+
 ## [1.3.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.0...v1.3.1) (2022-03-31)
 
 

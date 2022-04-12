@@ -44,10 +44,13 @@ class APIClient
      */
     public function __construct(array $params = [], string $domain = null)
     {
+        if (!function_exists("getregistrarconfigoptions")) {
+            include implode(DIRECTORY_SEPARATOR, [ROOTDIR, "includes", "registrarfunctions.php"]);
+        }
         if ($params) {
             $this->params = $params;
         } else {
-            $this->params = \getregistrarconfigoptions("rrpproxy");
+            $this->params = \getregistrarconfigoptions("keysystems");
         }
         if (!$domain && isset($params["sld"]) && $params["tld"]) {
             $domain = $params["sld"] . "." . $params["tld"];

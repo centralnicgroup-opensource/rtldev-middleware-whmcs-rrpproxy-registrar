@@ -47,7 +47,7 @@ class APIClient
         if ($params) {
             $this->params = $params;
         } else {
-            $this->params = \getregistrarconfigoptions("rrpproxy");
+            $this->params = \getregistrarconfigoptions("keysystems");
         }
         if (!$domain && isset($params["sld"]) && $params["tld"]) {
             $domain = $params["sld"] . "." . $params["tld"];

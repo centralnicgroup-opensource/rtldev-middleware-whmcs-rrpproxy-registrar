@@ -19,6 +19,7 @@ class Pricing
      * @param string $fromCurrency
      * @param string $toCurrency
      * @return float
+     * @throws Exception
      */
     public static function convertPrice(array $params, float $price, string $fromCurrency, string $toCurrency): float
     {
@@ -30,6 +31,7 @@ class Pricing
      * @param string $from
      * @param string $to
      * @return float
+     * @throws Exception
      */
     private static function getCachedExchangeRate(array $params, string $from, string $to): float
     {
@@ -38,14 +40,9 @@ class Pricing
         }
         $key = "$from-$to";
         if (!isset(self::$exchangeRates[$key])) {
-            try {
-                $rates = new QueryExchangeRates($params, $from, $to);
-                $rates->execute();
-                self::$exchangeRates[$key] = (float) $rates->api->properties["RATE"][0];
-            } catch (Exception $ex) {
-                //TODO sure we want to die like that?
-                die("ERROR getting exchange rate $from - $to : {$ex->getMessage()}\n");
-            }
+            $rates = new QueryExchangeRates($params, $from, $to);
+            $rates->execute();
+            self::$exchangeRates[$key] = (float) $rates->api->properties["RATE"][0];
         }
         return self::$exchangeRates[$key];
     }

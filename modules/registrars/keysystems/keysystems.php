@@ -1175,10 +1175,14 @@ function keysystems_GetTldPricing(array $params)
             $redemptionFee = $values['restore_fee'];
         } else {
             $currency = $defaultCurrency;
-            $setupFee = Pricing::convertPrice($params, $values['setup_fee'], $values['currency'], $currency);
-            $annualFee = Pricing::convertPrice($params, $values['annual_fee'], $values['currency'], $currency);
-            $transferFee = Pricing::convertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
-            $redemptionFee = Pricing::convertPrice($params, $values['restore_fee'], $values['currency'], $currency);
+            try {
+                $setupFee = Pricing::convertPrice($params, $values['setup_fee'], $values['currency'], $currency);
+                $annualFee = Pricing::convertPrice($params, $values['annual_fee'], $values['currency'], $currency);
+                $transferFee = Pricing::convertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
+                $redemptionFee = Pricing::convertPrice($params, $values['restore_fee'], $values['currency'], $currency);
+            } catch (Exception $ex) {
+                continue; // currency blocked - so skip this tld
+            }
         }
 
         // Workaround for stupid WHMCS logic as of 7.10 RC2

@@ -1,3 +1,12 @@
+## [1.3.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.2...v1.3.3) (2022-04-12)
+
+
+### Bug Fixes
+
+* **api:** get correct registrar config when initializing from external modules ([65a0b37](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/65a0b373a0f19d05a51480279be8316f24d93db7))
+* **api:** make sure registrarfunctions is loaded ([68a9a68](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/68a9a688a21378a901207d0280f9bd739802e7c2))
+* **tld-sync:** don't die if currency is blocked - skip tld instead ([67de01f](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/67de01f91184627d2ab1e8284d54137f889ec6d4))
+
 ## [1.3.2](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.1...v1.3.2) (2022-04-03)
 
 

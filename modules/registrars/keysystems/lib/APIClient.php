@@ -44,6 +44,9 @@ class APIClient
      */
     public function __construct(array $params = [], string $domain = null)
     {
+        if (!function_exists("getregistrarconfigoptions")) {
+            include implode(DIRECTORY_SEPARATOR, [ROOTDIR, "includes", "registrarfunctions.php"]);
+        }
         if ($params) {
             $this->params = $params;
         } else {

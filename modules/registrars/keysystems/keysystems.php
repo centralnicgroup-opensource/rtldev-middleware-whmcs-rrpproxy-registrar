@@ -22,6 +22,7 @@ if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
 
+use CNIC\ClientFactory;
 use Illuminate\Database\Capsule\Manager as DB;
 use WHMCS\Carbon;
 use WHMCS\Domain\Registrar\Domain;
@@ -1140,8 +1141,10 @@ function keysystems_GetTldPricing(array $params)
             $tlds[] = $tldList;
         }
 
-        foreach ($tlds as $tldList) {
-            $extension = strtolower($tldList);
+        $idn = $zoneList->api->client->IDNConvert($tlds);
+
+        foreach ($tlds as $index => $tld) {
+            $extension = strtolower($idn[$index]["IDN"]);
             $values = [
                 "active" => $zoneList->api->properties["ACTIVE"][$id],
                 "yearly" => $zoneList->api->properties["PERIODTYPE"][$id] == "YEAR",

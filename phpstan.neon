@@ -33,5 +33,6 @@ parameters:
             message: '#Function add_hook not found#'
             path: modules/registrars/keysystems/hooks.php
         - '#Constant RRPPROXY_VERSION not found#'
+        - '#Constant ROOTDIR not found#'
         - '#Call to an undefined static method Illuminate\\Database\\Capsule\\Manager::raw\(\)#'
         - '#WHMCS\\Domain#'

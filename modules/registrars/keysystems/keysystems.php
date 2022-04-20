@@ -1098,9 +1098,10 @@ function keysystems_dnssec(array $params): array
  */
 function keysystems_GetTldPricing(array $params)
 {
+    $results = new ResultsList();
     $ignoreZones = ["nameemail", "nuidn"]; // Those are not real TLDs but the API returns then for some reason
+    $defaultCurrency = DB::table('tblcurrencies')->where('default', 1)->value('code');
 
-    $pricelist = [];
     try {
         $zoneList = new QueryZoneList($params);
         $zoneList->execute();
@@ -1116,107 +1117,95 @@ function keysystems_GetTldPricing(array $params)
             continue;
         }
 
+        try {
+            $zoneInfo = ZoneInfo::get($params, $zone);
+        } catch (Exception $ex) {
+            continue; // let's ignore this for now...
+        }
+
         // Determine actual zones
-        $domain = $zoneList->api->properties["3RDS"][$id];
-        $domains = [];
-        if (strpos($domain, ' ') !== false) {
-            if (strpos($domain, ',') !== false) {
-                $domains = explode(', ', $domain);
+        $tldList = $zoneList->api->properties["3RDS"][$id];
+        $tlds = [];
+        if (strpos($tldList, ' ') !== false) {
+            if (strpos($tldList, ',') !== false) {
+                $tlds = explode(', ', $tldList);
             } else {
                 if (preg_match('/[a-z\.]/', $zone)) {
-                    $domains[] = $zone;
+                    $tlds[] = $zone;
                 } else {
                     continue;
                 }
             }
         } else {
-            $domains[] = $domain;
+            $tlds[] = $tldList;
         }
 
-        foreach ($domains as $domain) {
-            $pricelist[strtolower($domain)] = [
+        foreach ($tlds as $tldList) {
+            $extension = strtolower($tldList);
+            $values = [
                 "active" => $zoneList->api->properties["ACTIVE"][$id],
                 "yearly" => $zoneList->api->properties["PERIODTYPE"][$id] == "YEAR",
-                "count" => $zoneList->api->properties["DOMAINCOUNT"][$id] ?:  0,
+//                "count" => $zoneList->api->properties["DOMAINCOUNT"][$id] ?:  0,
                 "currency" => $zoneList->api->properties["CURRENCY"][$id],
                 "annual_fee" => (float) $zoneList->api->properties["ANNUAL"][$id],
-                "application_fee" => (float) $zoneList->api->properties["APPLICATION"][$id],
+//                "application_fee" => (float) $zoneList->api->properties["APPLICATION"][$id],
                 "restore_fee" => (float) $zoneList->api->properties["RESTORE"][$id],
                 "setup_fee" => (float) $zoneList->api->properties["SETUP"][$id],
-                "trade_fee" => (float) $zoneList->api->properties["TRADE"][$id],
+//                "trade_fee" => (float) $zoneList->api->properties["TRADE"][$id],
                 "transfer_fee" => (float) $zoneList->api->properties["TRANSFER"][$id]
             ];
-        }
-    }
 
-    $defaultCurrency = DB::table('tblcurrencies')->where('default', 1)->value('code');
-
-    $results = new ResultsList();
-    foreach ($pricelist as $extension => $values) {
-        if (!$values['active'] || !$values['yearly']) {
-            continue;
-        }
-
-        try {
-            $zone = ZoneInfo::get($params, $extension);
-        } catch (Exception $ex) {
-            continue; // let's ignore this for now...
-        }
-
-        preg_match_all("/(?:(\d+)y)+/", $zone->periods, $matches);
-        $years = $matches[1];
-
-        $systemCurrencies = localAPI('GetCurrencies', [])['currencies']['currency'];
-        if (in_array($values['currency'], array_column($systemCurrencies, 'code'))) {
-            $currency = $values['currency'];
-            $setupFee = $values['setup_fee'];
-            $annualFee = $values['annual_fee'];
-            $transferFee = $values['transfer_fee'];
-            $redemptionFee = $values['restore_fee'];
-        } else {
-            $currency = $defaultCurrency;
-            try {
-                $setupFee = Pricing::convertPrice($params, $values['setup_fee'], $values['currency'], $currency);
-                $annualFee = Pricing::convertPrice($params, $values['annual_fee'], $values['currency'], $currency);
-                $transferFee = Pricing::convertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
-                $redemptionFee = Pricing::convertPrice($params, $values['restore_fee'], $values['currency'], $currency);
-            } catch (Exception $ex) {
-                continue; // currency blocked - so skip this tld
+            if (!$values['active'] || !$values['yearly']) {
+                continue;
             }
-        }
 
-        // Workaround for stupid WHMCS logic as of 7.10 RC2
-        if ($setupFee > 0) {
-            $years = [$years[0]];
-        }
+            preg_match_all("/(?:(\d+)y)+/", $zoneInfo->periods, $matches);
+            $years = $matches[1];
 
-        $item = (new ImportItem())
-            ->setExtension($extension)
-            ->setYears($years)
-            ->setRegisterPrice($setupFee + $annualFee)
-            ->setCurrency($currency)
-            ->setEppRequired($zone->epp_required);
+            $systemCurrencies = localAPI('GetCurrencies', [])['currencies']['currency'];
+            if (in_array($values['currency'], array_column($systemCurrencies, 'code'))) {
+                $currency = $values['currency'];
+                $setupFee = $values['setup_fee'];
+                $annualFee = $values['annual_fee'];
+                $transferFee = $values['transfer_fee'];
+                $redemptionFee = $values['restore_fee'];
+            } else {
+                $currency = $defaultCurrency;
+                try {
+                    $setupFee = Pricing::convertPrice($params, $values['setup_fee'], $values['currency'], $currency);
+                    $annualFee = Pricing::convertPrice($params, $values['annual_fee'], $values['currency'], $currency);
+                    $transferFee = Pricing::convertPrice($params, $values['transfer_fee'], $values['currency'], $currency);
+                    $redemptionFee = Pricing::convertPrice($params, $values['restore_fee'], $values['currency'], $currency);
+                } catch (Exception $ex) {
+                    continue; // currency blocked - so skip this tld
+                }
+            }
 
-        if (is_numeric($annualFee)) {
-            $item->setRenewPrice($annualFee);
-        }
+            // Workaround for stupid WHMCS logic as of 7.10 RC2
+            if ($setupFee > 0) {
+                $years = [$years[0]];
+            }
 
-        if (is_numeric($transferFee)) {
-            $item->setTransferPrice($transferFee);
-        }
+            $item = (new ImportItem())
+                ->setExtension($extension)
+                ->setYears($years)
+                ->setRegisterPrice($setupFee + $annualFee)
+                ->setRenewPrice($annualFee)
+                ->setTransferPrice($transferFee)
+                ->setCurrency($currency)
+                ->setEppRequired($zoneInfo->epp_required);
 
-        if (is_numeric($zone->grace_days)) {
-            $item->setGraceFeeDays($zone->grace_days)
-                ->setGraceFeePrice($annualFee);
-        }
-        if (is_numeric($zone->redemption_days)) {
-            $item->setRedemptionFeeDays($zone->redemption_days);
-            if (is_numeric($redemptionFee)) {
+            if (is_numeric($zoneInfo->grace_days)) {
+                $item->setGraceFeeDays($zoneInfo->grace_days)
+                    ->setGraceFeePrice($annualFee);
+            }
+            if (is_numeric($zoneInfo->redemption_days)) {
+                $item->setRedemptionFeeDays($zoneInfo->redemption_days);
                 $item->setRedemptionFeePrice($redemptionFee);
             }
-        }
 
-        $results->append($item);
+            $results->append($item);
+        }
     }
 
     Pricing::syncFeatures($params);

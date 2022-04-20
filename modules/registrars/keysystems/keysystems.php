@@ -22,6 +22,7 @@ if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
 
+use CNIC\ClientFactory;
 use Illuminate\Database\Capsule\Manager as DB;
 use WHMCS\Carbon;
 use WHMCS\Domain\Registrar\Domain;
@@ -55,7 +56,7 @@ use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
 use WHMCS\Module\Registrar\RRPproxy\Migrator;
 use WHMCS\Module\Registrar\RRPproxy\Updater;
 
-const RRPPROXY_VERSION = "1.3.3";
+const RRPPROXY_VERSION = "1.3.4";
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -1140,8 +1141,10 @@ function keysystems_GetTldPricing(array $params)
             $tlds[] = $tldList;
         }
 
-        foreach ($tlds as $tldList) {
-            $extension = strtolower($tldList);
+        $idn = $zoneList->api->client->IDNConvert($tlds);
+
+        foreach ($tlds as $index => $tld) {
+            $extension = strtolower($idn[$index]["IDN"]);
             $values = [
                 "active" => $zoneList->api->properties["ACTIVE"][$id],
                 "yearly" => $zoneList->api->properties["PERIODTYPE"][$id] == "YEAR",

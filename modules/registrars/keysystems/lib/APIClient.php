@@ -3,6 +3,7 @@
 namespace WHMCS\Module\Registrar\RRPproxy;
 
 use CNIC\ClientFactory;
+use CNIC\HEXONET\SessionClient;
 use WHMCS\Domain\Registrar\Domain;
 use Exception;
 
@@ -13,6 +14,10 @@ class APIClient
      * @var array<string, mixed>
      */
     public array $params;
+    /**
+     * @var SessionClient
+     */
+    public SessionClient $client;
     /**
      * @var array<string, mixed>
      */
@@ -41,6 +46,7 @@ class APIClient
     /**
      * @param array<string, mixed> $params
      * @param string|null $domain
+     * @throws Exception
      */
     public function __construct(array $params = [], string $domain = null)
     {
@@ -58,6 +64,37 @@ class APIClient
         if ($domain) {
             $this->domain = new Domain($this, $domain);
         }
+        $this->client = $this->getClient();
+    }
+
+    /***
+     * @return SessionClient
+     * @throws Exception
+     */
+    public function getClient(): SessionClient
+    {
+        $client = ClientFactory::getClient([
+            "registrar" => "RRPproxy"
+        ]);
+        if ($this->params["TestMode"]) {
+            $client->useOTESystem();
+            $client->setCredentials($this->params["Username"], html_entity_decode($this->params["TestPassword"], ENT_QUOTES));
+        } else {
+            $client->setCredentials($this->params["Username"], html_entity_decode($this->params["Password"], ENT_QUOTES));
+        }
+
+        $client->setReferer($GLOBALS["CONFIG"]["SystemURL"])
+            ->setUserAgent("WHMCS", $GLOBALS["CONFIG"]["Version"], ["keysystems" => RRPPROXY_VERSION]);
+
+        if (\WHMCS\Config\Setting::getValue("ModuleDebugMode")) {
+            $client->setCustomLogger(new Logger())
+                ->enableDebugMode();
+        }
+
+        if (strlen($this->params["ProxyServer"])) {
+            $client->setProxy($this->params["ProxyServer"]);
+        }
+        return $client;
     }
 
     /**
@@ -69,33 +106,12 @@ class APIClient
     public function call(string $command, bool $getAllPages = false): void
     {
         $this->command = $command;
-        $cl = ClientFactory::getClient([
-            "registrar" => "RRPproxy"
-        ]);
-        if ($this->params["TestMode"]) {
-            $cl->useOTESystem();
-            $cl->setCredentials($this->params["Username"], html_entity_decode($this->params["TestPassword"], ENT_QUOTES));
-        } else {
-            $cl->setCredentials($this->params["Username"], html_entity_decode($this->params["Password"], ENT_QUOTES));
-        }
-
-        $cl->setReferer($GLOBALS["CONFIG"]["SystemURL"])
-            ->setUserAgent("WHMCS", $GLOBALS["CONFIG"]["Version"], ["keysystems" => RRPPROXY_VERSION]);
-
-        if (\WHMCS\Config\Setting::getValue("ModuleDebugMode")) {
-            $cl->setCustomLogger(new Logger())
-                ->enableDebugMode();
-        }
-
-        if (strlen($this->params["ProxyServer"])) {
-            $cl->setProxy($this->params["ProxyServer"]);
-        }
 
         $requestArgs = array_merge(["command" => $command], $this->args);
         if ($getAllPages) {
-            $responses = $cl->requestAllResponsePages($requestArgs);
+            $responses = $this->client->requestAllResponsePages($requestArgs);
         } else {
-            $responses = [$cl->request($requestArgs)];
+            $responses = [$this->client->request($requestArgs)];
         }
 
         foreach ($responses as $response) {

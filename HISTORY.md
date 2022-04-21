@@ -1,3 +1,11 @@
+## [1.3.4](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.3...v1.3.4) (2022-04-21)
+
+
+### Bug Fixes
+
+* **tld-sync:** convert punycode to idn ([5eb92a5](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/5eb92a561e89b4534186ac63fef0fd74701ddc1b))
+* **tld-sync:** fix some second level tlds being ignored ([51f42cc](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/51f42cc438056a7bd7f657e931be4bf6e172d07e)), closes [#86](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/86)
+
 ## [1.3.3](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.2...v1.3.3) (2022-04-12)
 
 

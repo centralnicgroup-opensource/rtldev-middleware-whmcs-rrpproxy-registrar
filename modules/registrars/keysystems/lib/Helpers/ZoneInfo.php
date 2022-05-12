@@ -48,6 +48,7 @@ class ZoneInfo
             }
         }
 
+        //$zone = null;
         if (!$zone || ($updateNeeded && $updates < $maxUpdates)) {
             try {
                 $zoneInfo = new GetZoneInfo($params, $tld);
@@ -58,6 +59,29 @@ class ZoneInfo
                 }
                 throw new Exception($ex->getMessage());
             }
+
+            //$p1 = explode(",",$zoneInfo->api->properties['REGISTRATIONPERIODS'][0]);
+            //$p2 = explode(",",$zoneInfo->api->properties['RENEWALPERIODS'][0]);
+            //$diff = array_diff($p1, $p2);
+
+            // if (
+            //    empty(array_intersect($p1, $p2))
+            //    || empty(array_intersect($p2, $p1))
+            //) {
+            //    logActivity($tld . ": " . json_encode([
+            //        "registration" => $p1,
+            //        "renewal" => $p2
+            //    ], JSON_PRETTY_PRINT));
+            //}
+            // 2022-05:
+            // no renewal terms: .xin, .sc.ke, .net.vu,.mobi.ke, .me.ke, .edu.mt, .com.vu, .ac.ni, .ac.ke
+            // different terms: .tm, .org.gi, .net.bd, .hu, .gi
+            // n/a as term: .nl, .li, .jp, .it, .de, .ch
+
+            //if (!empty($diff)) {
+            //    logActivity($tld . ": " . json_encode($diff, JSON_PRETTY_PRINT));
+            //}
+            // 2022-05: plenty of tlds having reg terms that are not supported for renewal
 
             $data = [
                 'zone' => $tld,

@@ -1100,7 +1100,9 @@ function keysystems_dnssec(array $params): array
 function keysystems_GetTldPricing(array $params)
 {
     $results = new ResultsList();
-    $ignoreZones = ["nameemail", "nuidn"]; // Those are not real TLDs but the API returns then for some reason
+    $ignoreZones = ["nameemail", "nuidn"]; // Those are not real TLDs but the API returns them for the below reasons
+    // .nu idns e.g. omvärlden.nu (so <idn>.nu vs <ascii>.nu)
+    // nameemail -> https://wiki.hexonet.net/wiki/NAME#.NAME_Email_Forwardings
     $defaultCurrency = DB::table('tblcurrencies')->where('default', 1)->value('code');
 
     try {

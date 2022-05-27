@@ -18,11 +18,11 @@ class Migrator
         $oldConfig = DB::table('tblregistrars')
             ->where('registrar', $oldModule)
             ->pluck('value', 'setting');
+        // This is needed for WHMCS v8 compatibility
+        if ((int) $params['whmcsVersion'][0] >= 8) {
+            $oldConfig = $oldConfig->toArray();
+        }
         if (!empty($oldConfig)) {
-            // This is needed for WHMCS v8 compatibility
-            if ((int) $params['whmcsVersion'][0] >= 8) {
-                $oldConfig = $oldConfig->toArray();
-            }
             $oldConfig['TestPassword'] = $oldConfig['Password'];
             foreach ($oldConfig as $key => $val) {
                 DB::table('tblregistrars')

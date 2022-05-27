@@ -1052,11 +1052,19 @@ function keysystems_dnssec(array $params): array
         $keydata_rrp = (isset($statusDomain->api->properties["DNSSEC"])) ? $statusDomain->api->properties["DNSSEC"] : [];
 
         foreach ($dsdata_rrp as $ds) {
-            list($keytag, $alg, $digesttype, $digest) = preg_split('/\s+/', $ds);
+            $split = preg_split('/\s+/', $ds);
+            if ($split === false) {
+                continue;
+            }
+            list($keytag, $alg, $digesttype, $digest) = $split;
             $dsData[] = ["keytag" => $keytag, "alg" => $alg, "digesttype" => $digesttype, "digest" => $digest];
         }
         foreach ($keydata_rrp as $key) {
-            list($flags, $protocol, $alg, $pubkey) = preg_split('/\s+/', $key);
+            $split = preg_split('/\s+/', $key);
+            if ($split === false) {
+                continue;
+            }
+            list($flags, $protocol, $alg, $pubkey) = $split;
             $keyData[] = ["flags" => $flags, "protocol" => $protocol, "alg" => $alg, "pubkey" => $pubkey];
         }
     } catch (Exception $ex) {

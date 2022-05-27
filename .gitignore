@@ -6,12 +6,10 @@
 
 # Composer
 composer.phar
-composer.lock
 vendor
 
 # npm
 node_modules
-package-lock.json
 
 # Coverage Reporting
 report

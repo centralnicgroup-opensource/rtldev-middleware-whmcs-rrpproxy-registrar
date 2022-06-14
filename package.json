@@ -42,6 +42,9 @@
     "registration",
     "application"
   ],
+  "overrides":{
+		"glob-parent":"^6.0.2"
+	},
   "devDependencies": {
     "@hexonet/semantic-release-github-whmcs-config": "^3.0.0",
     "cz-conventional-changelog": "^3.3.0",

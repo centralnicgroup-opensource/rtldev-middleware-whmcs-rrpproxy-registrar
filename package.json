@@ -42,12 +42,11 @@
     "registration",
     "application"
   ],
-  "overrides":{
-		"glob-parent":"^6.0.2"
-	},
+  "overrides": {
+    "glob-parent": "^6.0.2"
+  },
   "devDependencies": {
     "@hexonet/semantic-release-github-whmcs-config": "^3.0.1",
-    "cz-conventional-changelog": "^3.3.0",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
     "gulp-zip": "^5.0.2",
@@ -60,8 +59,5 @@
     "phpCompatibility": "./scripts/phpcompatibility.sh"
   },
   "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   }
 }

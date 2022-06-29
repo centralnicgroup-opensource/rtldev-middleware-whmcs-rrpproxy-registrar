@@ -2,15 +2,15 @@
 
 namespace WHMCS\Module\Registrar\RRPproxy;
 
+use CNIC\HEXONET\Response;
 use CNIC\LoggerInterface;
-use CNIC\ResponseInterface;
 
 class Logger implements LoggerInterface
 {
     /**
      * output/log given data
      */
-    public function log(string $post, ResponseInterface $r, string $error = null): void
+    public function log(string $post, Response $r, string $error = null): void
     {
         if (!function_exists("logModuleCall")) {
             return;

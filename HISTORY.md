@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.4.0...v1.5.0) (2022-06-29)
+
+
+### Features
+
+* **sdk:** update to latest php-sdk ([292659b](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/292659bee3b9c9f9d4c02985eeada8367bdb91d1))
+
 # [1.4.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.3.4...v1.4.0) (2022-05-27)
 
 

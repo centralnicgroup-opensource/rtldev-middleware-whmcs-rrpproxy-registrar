@@ -1,3 +1,11 @@
+## [1.5.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.5.0...v1.5.1) (2022-07-01)
+
+
+### Bug Fixes
+
+* **renewal:** renewal support was active for some tlds that do not support it ([0148a23](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/0148a23e03e92ff339aa447ab0f7104702cab5a4)), closes [#95](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/95)
+* **transfer:** remove unsupported field from transfer command for .dev tld ([6a58001](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/6a5800169c448495ae6d70d12edae3e52d0c3e7b)), closes [#96](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/issues/96)
+
 # [1.5.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.4.0...v1.5.0) (2022-06-29)
 
 

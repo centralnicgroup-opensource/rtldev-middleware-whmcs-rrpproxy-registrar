@@ -70,5 +70,8 @@ class TransferDomain extends CommandBase
         if (preg_match("/\.ngo$/i", $this->domainName)) {
             unset($this->api->args["X-NGO-ACCEPT-REGISTRATION-TAC"]); // not supported for transfers
         }
+        if (preg_match("/\.dev$/i", $this->domainName)) {
+            unset($this->api->args["X-ACCEPT-SSL-REQUIREMENT"]); // not supported for transfers
+        }
     }
 }

@@ -92,7 +92,7 @@ class ZoneInfo
                 'redemption_days' => $zoneInfo->api->properties['REDEMPTIONPERIODDAYS'][0] ?: 0,
                 'epp_required' => $zoneInfo->api->properties['AUTHCODE'][0] == 'required',
                 'id_protection' => $zoneInfo->api->properties['RRPSUPPORTSWHOISPRIVACY'][0] || $zoneInfo->api->properties['SUPPORTSTRUSTEE'][0],
-                'supports_renewals' => $zoneInfo->api->properties['RENEWALPERIODS'][0] != 'n/a',
+                'supports_renewals' => $zoneInfo->api->properties['RRPSUPPORTSRENEWAL'][0] ?: 0,
                 'renews_on_transfer' => $zoneInfo->api->properties['RENEWALATTRANSFER'][0] == 1 || $zoneInfo->api->properties['RENEWALAFTERTRANSFER'][0] == 1,
                 'handle_updatable' => $zoneInfo->api->properties['HANDLESUPDATEABLE'][0] == 1,
                 'needs_trade' => strtoupper($zoneInfo->api->properties['OWNERCHANGEPROCESS'][0]) == 'TRADE',

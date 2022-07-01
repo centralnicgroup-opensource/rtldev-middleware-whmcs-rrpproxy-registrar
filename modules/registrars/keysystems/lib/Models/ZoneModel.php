@@ -81,6 +81,14 @@ class ZoneModel extends Model
                 self::dropIfExists();
                 return false;
             }
+            $hasWrongRenewals = DB::table(self::$tblName)
+                ->where('zone', '=', 'be')
+                ->where('supports_renewals', '=', '1')
+                ->exists();
+            if ($hasWrongRenewals) {
+                self::dropIfExists();
+                return false;
+            }
             return true;
         }
         return false;

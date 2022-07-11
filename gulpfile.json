@@ -3,7 +3,6 @@
     "phpcsparams": "--extensions=php --ignore=node_modules,vendor,templates_c -q modules resources tests",
     "phpcsfixcmd": "phpcbf --standard=PSR12",
     "phpcschkcmd": "phpcs -n --colors --standard=PSR12",
-    "phpcomptcmd": "phpcs -n --colors --standard=PHPCompatibility --runtime-set testVersion \"$(php -r 'echo PHP_MAJOR_VERSION . \".\" . PHP_MINOR_VERSION;')\"",
     "phpstancmd": "phpstan analyze -c phpstan.neon --memory-limit 2G",
     "archiveFileName": "whmcs-rrpproxy-registrar",
     "archiveBuildPath": "build",
@@ -18,7 +17,6 @@
         "templates_c",
         "composer.lock",
         ".phpunit.result.cache",
-        "package-lock.json",
         "tmp"
     ]
 }

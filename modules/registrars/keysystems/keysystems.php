@@ -1284,3 +1284,26 @@ function keysystems_GetZoneFeatures(array $params): ?object
 {
     return ZoneInfo::getForMigrator($params);
 }
+
+/**
+ * Returns customer account details such as amount, currency, deposit etc.
+ *
+ * @return array<string, mixed>
+ */
+function keysystems_getAccountDetails() {
+    $client = new \WHMCS\Module\Registrar\RRPproxy\APIClient();
+    $client->call("StatusAccount");
+    
+    // then check:
+    $r =  $client->response;
+    if ($r["CODE"] !== "200") {
+         return [
+             "success" => false
+         ];
+    }
+    return [
+          "success" => true,
+          "amount" => $r["PROPERTY"]["AMOUNT"][0],
+          "currency" => $r["PROPERTY"]["CURRENCY"][0]
+    ];
+}

@@ -1290,10 +1290,11 @@ function keysystems_GetZoneFeatures(array $params): ?object
  *
  * @return array<string, mixed>
  */
-function keysystems_getAccountDetails() {
+function keysystems_getAccountDetails()
+{
     $client = new \WHMCS\Module\Registrar\RRPproxy\APIClient();
     $client->call("StatusAccount");
-    
+
     // then check:
     $r =  $client->response;
     if ($r["CODE"] !== "200") {

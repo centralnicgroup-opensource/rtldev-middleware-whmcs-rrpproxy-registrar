@@ -14,10 +14,6 @@ jobs:
     name: Release Job
     runs-on: ubuntu-latest
     needs: linting
-    strategy:
-      matrix:
-        php-version:
-          - 7.4
 
     steps:
       - name: Checkout
@@ -31,12 +27,15 @@ jobs:
           node-version: lts/*
           check-latest: true
           cache: "npm"
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Dependencies::PHP${{ matrix.php-version }}
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
+      - name: Install Dependencies
         run: |
           echo "$HOME/.composer/vendor/bin" >> $GITHUB_PATH
           composer update --no-dev
+          npm ci
       - name: Release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

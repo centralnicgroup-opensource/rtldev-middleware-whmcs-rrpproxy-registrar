@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.5.1...v1.6.0) (2022-07-13)
+
+
+### Features
+
+* **keysystems.php:** getAccountdetails ([285d7e1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/285d7e10ab56ea8596438fd42c70171feb14eb75))
+
 ## [1.5.1](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.5.0...v1.5.1) (2022-07-01)
 
 

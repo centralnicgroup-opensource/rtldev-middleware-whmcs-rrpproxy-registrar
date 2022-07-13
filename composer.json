@@ -15,13 +15,7 @@
     }
   },
   "config": {
-    "platform": {
-      "php": "7.4.0"
-    },
-    "vendor-dir": "modules/registrars/keysystems/vendor",
-    "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
-    }
+    "vendor-dir": "modules/registrars/keysystems/vendor"
   },
   "scripts": {
     "phpstan": [
@@ -38,7 +32,7 @@
     ]
   },
   "require": {
-    "php": "^7.4",
+    "php": "^7.3.0",
     "ext-json": "*",
     "centralnic-reseller/php-sdk": "^7.1.0"
   },

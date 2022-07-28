@@ -23,6 +23,7 @@ abstract class CommandBase
 
     /**
      * @param array<string, mixed> $params
+     * @throws Exception
      */
     public function __construct(array $params)
     {

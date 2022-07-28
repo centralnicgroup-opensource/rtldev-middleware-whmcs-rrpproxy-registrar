@@ -41,6 +41,7 @@ use WHMCS\Module\Registrar\RRPproxy\Commands\RenewDomain;
 use WHMCS\Module\Registrar\RRPproxy\Commands\ResendNotification;
 use WHMCS\Module\Registrar\RRPproxy\Commands\SetAuthCode;
 use WHMCS\Module\Registrar\RRPproxy\Commands\SetDomainRenewalMode;
+use WHMCS\Module\Registrar\RRPproxy\Commands\StatusAccount;
 use WHMCS\Module\Registrar\RRPproxy\Commands\StatusContact;
 use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomain;
 use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomainTransfer;
@@ -1290,21 +1291,18 @@ function keysystems_GetZoneFeatures(array $params): ?object
  *
  * @return array<string, mixed>
  */
-function keysystems_getAccountDetails()
+function keysystems_getAccountDetails(): array
 {
-    $client = new \WHMCS\Module\Registrar\RRPproxy\APIClient();
-    $client->call("StatusAccount");
-
-    // then check:
-    $r =  $client->response;
-    if ($r["CODE"] !== "200") {
-         return [
-             "success" => false
-         ];
+    try {
+        $statusAccount = new StatusAccount([]);
+        return [
+            "success" => true,
+            "amount" => $statusAccount->api->properties["AMOUNT"][0],
+            "currency" => $statusAccount->api->properties["CURRENCY"][0]
+        ];
+    } catch (Exception $e) {
+        return [
+            "success" => false
+        ];
     }
-    return [
-          "success" => true,
-          "amount" => $r["PROPERTY"]["AMOUNT"][0],
-          "currency" => $r["PROPERTY"]["CURRENCY"][0]
-    ];
 }

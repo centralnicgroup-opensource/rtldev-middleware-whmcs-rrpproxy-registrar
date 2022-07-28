@@ -87,3 +87,28 @@ $additionaldomainfields[".pt"][] = [
     "Default" => "",
     "Description" => "Fiscal ID (VAT number) of the person or company that you are inserting as tech-contact without the country code"
 ];
+
+//.cn
+$additionaldomainfields[".cn"][] = [
+    "Name" => "Owner Type",
+    "LangVar" => "cntldownertype",
+    "Type" => "dropdown",
+    "Options" => "Enterprise,Individual",
+    "Default" => "Individual",
+    "Description" => "Legal type of registrant"
+];
+$additionaldomainfields[".cn"][] = [
+    "Name" => "ID Number",
+    "LangVar" => "cntldidnum",
+    "Type" => "text",
+    "Size" => "20",
+    "Default" => "",
+    "Required" => true
+];
+$additionaldomainfields[".cn"][] = [
+    "Name" => "ID Type",
+    "LangVar" => "cntldidtype",
+    "Type" => "dropdown",
+    "Options" => "Beijing School for Children of Foreign Embassy Staff in China Permit,Business License,Certificate for Uniform Social Credit Code,Exit-Entry Permit for Travelling to and from Hong Kong and Macao,Foreign Permanent Resident ID Card,Fund Legal Person Registration Certificate,ID,Judicial Expertise License,Medical Institution Practicing License,Military Code Designation,Military Paid External Service License,Notary Organization Practicing License,Officer’s identity card,Organization Code Certificate,Others,Others-Certificate for Uniform Social Credit Code,Overseas Organization Certificate,Passport,Practicing License of Law Firm,Private Non-Enterprise Entity Registration Certificate,Private School Permit,Public Institution Legal Person Certificate,Registration Certificate of Foreign Cultural Center in China,Religion Activity Site Registration Certificate,Residence permit for Hong Kong and Macao residents,Residence permit for Taiwan residents,Resident Representative Office of Tourism Departments of Foreign Government Approval Registration Certificate,Resident Representative Offices of Foreign Enterprises Registration Form,Social Organization Legal Person Registration Certificate,Social Service Agency Registration Certificate,Travel passes for Taiwan Residents to Enter or Leave the Mainland",
+    "Default" => "Passport"
+];

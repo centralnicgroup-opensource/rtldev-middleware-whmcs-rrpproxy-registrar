@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.6.0...v1.7.0) (2022-07-28)
+
+
+### Bug Fixes
+
+* **account:** fix exception handling in getAccountDetails and small refactor ([1132f7a](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/1132f7ab7729418e3614665a7335daf3189d2145))
+
+
+### Features
+
+* **tld-cn:** implement new additional fields for .cn ([2ea9f98](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/commit/2ea9f987143b9c50e49dbc75e885e5d1e9c7e972))
+
 # [1.6.0](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/compare/v1.5.1...v1.6.0) (2022-07-13)
 
 

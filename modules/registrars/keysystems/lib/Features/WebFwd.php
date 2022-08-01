@@ -1,16 +1,16 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Features;
+namespace WHMCS\Module\Registrar\Keysystems\Features;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Commands\CommandBase;
+use WHMCS\Module\Registrar\Keysystems\Commands\CommandBase;
 
 class WebFwd extends CommandBase
 {
     /**
      * @var array<string>
      */
-    public array $names = [];
+    public $names = [];
 
     /**
      * @param array<string, mixed> $params

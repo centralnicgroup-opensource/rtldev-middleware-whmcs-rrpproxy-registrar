@@ -1,25 +1,37 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use Exception;
 use ReflectionClass;
-use WHMCS\Module\Registrar\RRPproxy\APIClient;
+use WHMCS\Module\Registrar\Keysystems\APIClient;
 
 abstract class CommandBase
 {
-    public APIClient $api;
-    private string $commandName;
-    public string $domainName;
+    /**
+     * @var APIClient
+     */
+    public $api;
+    /**
+     * @var string
+     */
+    private $commandName;
+    /**
+     * @var string
+     */
+    public $domainName;
     /**
      * @var array<string, mixed>
      */
-    public array $params;
-    private bool $success;
+    public $params;
+    /**
+     * @var boolean
+     */
+    private $success;
     /**
      * @var array<string>
      */
-    private array $errors = [];
+    private $errors = [];
 
     /**
      * @param array<string, mixed> $params

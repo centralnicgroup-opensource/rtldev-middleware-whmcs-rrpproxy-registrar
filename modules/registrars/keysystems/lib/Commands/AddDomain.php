@@ -1,10 +1,10 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Features\Contact;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\AdditionalFields;
+use WHMCS\Module\Registrar\Keysystems\Features\Contact;
+use WHMCS\Module\Registrar\Keysystems\Helpers\AdditionalFields;
 
 class AddDomain extends CommandBase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy;
+namespace WHMCS\Module\Registrar\Keysystems;
 
 use Illuminate\Database\Capsule\Manager as DB;
 

@@ -1,12 +1,12 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Features\Contact;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\AdditionalFields;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
-use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
+use WHMCS\Module\Registrar\Keysystems\Features\Contact;
+use WHMCS\Module\Registrar\Keysystems\Helpers\AdditionalFields;
+use WHMCS\Module\Registrar\Keysystems\Helpers\ZoneInfo;
+use WHMCS\Module\Registrar\Keysystems\Models\ZoneModel;
 
 class TransferDomain extends CommandBase
 {
@@ -30,10 +30,10 @@ class TransferDomain extends CommandBase
         if ($params["eppcode"]) {
             $this->api->args["AUTH"] = $params["eppcode"];
         }
-//        Disabled as for example .it does not like this
-//        if ($this->zoneInfo->needs_trade) {
-//            $this->api->args["ACCEPT-TRADE"] = 1;
-//        }
+        //        Disabled as for example .it does not like this
+        //        if ($this->zoneInfo->needs_trade) {
+        //            $this->api->args["ACCEPT-TRADE"] = 1;
+        //        }
         $this->api->args["TRANSFERLOCK"] = 1;
         $this->api->args["FORCEREQUEST"] = 1; // TODO what does this do?
 

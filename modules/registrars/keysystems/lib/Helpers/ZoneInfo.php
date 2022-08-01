@@ -1,11 +1,11 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Helpers;
+namespace WHMCS\Module\Registrar\Keysystems\Helpers;
 
 use DateTime;
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Commands\GetZoneInfo;
-use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
+use WHMCS\Module\Registrar\Keysystems\Commands\GetZoneInfo;
+use WHMCS\Module\Registrar\Keysystems\Models\ZoneModel;
 
 class ZoneInfo
 {

@@ -1,6 +1,6 @@
 {
   "name": "rrpproxy/whmcs-rrpproxy-registrar",
-  "description": "RRPproxy Registrar Module for WHMCS",
+  "description": "CentralNic Reseller Registrar Module for WHMCS",
   "type": "project",
   "license": "MIT",
   "authors": [
@@ -11,11 +11,14 @@
   ],
   "autoload": {
     "psr-4": {
-      "WHMCS\\Module\\Registrar\\RRPproxy\\": "modules/registrars/keysystems/lib/"
+      "WHMCS\\Module\\Registrar\\Keysystems\\": "modules/registrars/keysystems/lib/"
     }
   },
   "config": {
-    "vendor-dir": "modules/registrars/keysystems/vendor"
+    "vendor-dir": "modules/registrars/keysystems/vendor",
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   },
   "scripts": {
     "phpstan": [

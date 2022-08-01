@@ -1,6 +1,6 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Helpers;
+namespace WHMCS\Module\Registrar\Keysystems\Helpers;
 
 class AdditionalFields
 {

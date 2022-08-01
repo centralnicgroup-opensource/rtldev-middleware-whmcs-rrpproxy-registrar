@@ -1,17 +1,17 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Helpers;
+namespace WHMCS\Module\Registrar\Keysystems\Helpers;
 
 use Illuminate\Database\Capsule\Manager as DB;
 
 class Order
 {
-    public int $userId;
-    public int $contactId;
+    public $userId;
+    public $contactId;
     /**
      * @var array<string>
      */
-    public array $nameServers;
+    public $nameServers;
 
     public function __construct(string $domain)
     {

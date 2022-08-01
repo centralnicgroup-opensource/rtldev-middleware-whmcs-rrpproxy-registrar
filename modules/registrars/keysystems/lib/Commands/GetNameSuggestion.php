@@ -1,6 +1,6 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 class GetNameSuggestion extends CommandBase
 {

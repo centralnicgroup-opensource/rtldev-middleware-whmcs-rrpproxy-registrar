@@ -1,11 +1,11 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use Exception;
 use WHMCS\Domain\Registrar\Domain;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
-use WHMCS\Module\Registrar\RRPproxy\Models\ZoneModel;
+use WHMCS\Module\Registrar\Keysystems\Helpers\ZoneInfo;
+use WHMCS\Module\Registrar\Keysystems\Models\ZoneModel;
 use Illuminate\Database\Capsule\Manager as DB;
 
 /**
@@ -44,10 +44,10 @@ class RenewDomain extends CommandBase
                 $msg = "Renewal for domain $this->domainName was skipped because the domain was already renewed.\n";
                 $msg .= "Current expiration date: $this->domain->expirydate\n";
 
-                localAPI('LogActivity', ['description' => "[keysystems] $msg"]);
+                localAPI('LogActivity', ['description' => "[CentralNicReseller] $msg"]);
 
                 $command = "sendadminemail";
-                $values["customsubject"] = "RRPproxy Renewal Skipped";
+                $values["customsubject"] = "CentralNic Reseller Renewal Skipped";
                 $values["custommessage"] = nl2br($msg);
                 $values["type"] = "system";
                 $values["mergefields"] = [];

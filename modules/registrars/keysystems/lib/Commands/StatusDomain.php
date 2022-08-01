@@ -1,9 +1,9 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
+use WHMCS\Module\Registrar\Keysystems\Helpers\ZoneInfo;
 
 class StatusDomain extends CommandBase
 {

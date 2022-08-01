@@ -1,9 +1,9 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Features;
+namespace WHMCS\Module\Registrar\Keysystems\Features;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Commands\CommandBase;
+use WHMCS\Module\Registrar\Keysystems\Commands\CommandBase;
 
 class Nameserver extends CommandBase
 {

@@ -1,51 +1,51 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Helpers;
+namespace WHMCS\Module\Registrar\Keysystems\Helpers;
 
 use Exception;
 use Illuminate\Database\Capsule\Manager as DB;
-use WHMCS\Module\Registrar\RRPproxy\Commands\QueryDNSZoneList;
-use WHMCS\Module\Registrar\RRPproxy\Commands\QueryDomainList;
-use WHMCS\Module\Registrar\RRPproxy\Commands\SetDomainRenewalMode;
+use WHMCS\Module\Registrar\Keysystems\Commands\QueryDNSZoneList;
+use WHMCS\Module\Registrar\Keysystems\Commands\QueryDomainList;
+use WHMCS\Module\Registrar\Keysystems\Commands\SetDomainRenewalMode;
 
 class Sync
 {
     /**
      * @var array<string, mixed>
      */
-    private array $params;
+    private $params;
     /**
      * @var int
      */
-    private int $expirationWarningTs;
+    private $expirationWarningTs;
     /**
      * @var array<array<string, string>>
      */
-    private array $reactivatedDomains;
+    private $reactivatedDomains;
     /**
      * @var array<array<string, string>>
      */
-    private array $expiringDomains;
+    private $expiringDomains;
     /**
      * @var array<array<string, string>>
      */
-    private array $cancelledDomains;
+    private $cancelledDomains;
     /**
      * @var array<array<string, string>>
      */
-    private array $notRenewingDomains;
+    private $notRenewingDomains;
     /**
      * @var array<array<string, string>>
      */
-    private array $failedDomains;
+    private $failedDomains;
     /**
      * @var array<array<string, string>>
      */
-    private array $orphanDomains;
+    private $orphanDomains;
     /**
      * @var array<array<string, string>>
      */
-    private array $orphanDnsZones;
+    private $orphanDnsZones;
 
     /**
      * @param array<string, mixed> $params
@@ -122,13 +122,13 @@ class Sync
                             "renewalMode" => $renewalMode
                         ];
 
-                        // Check if domain is expired in WHMCS but still active / active again in RRPproxy
+                        // Check if domain is expired in WHMCS but still active / active again in CentralNic Reseller/RRPproxy
                         if (in_array($domain, $expiredDomains) && $expirationDate["ts"] > $currentTs) {
                             $this->updateDomain($domain, ["expirydate" => $expirationDate["long"], "status" => "Active"]);
                             $this->reactivatedDomains[] = $domainData;
                         }
 
-                        // Check if domain is cancelled in WHMCS but still active in RRPproxy
+                        // Check if domain is cancelled in WHMCS but still active in CentralNic Reseller/RRPproxy
                         if ((in_array($domain, $pendingCancellation) || in_array($domain, $cancelledDomains)) && !in_array($renewalMode, ["AUTOEXPIRE", "AUTODELETE"])) {
                             $params = $this->getParamsWithDomain($domain);
                             $setRenewalMode = new SetDomainRenewalMode($params);
@@ -205,7 +205,7 @@ class Sync
 
         if (!empty($this->reactivatedDomains)) {
             $html .= $this->renderTable(
-                "Domains in expired/grace/redemption status but active at RRPproxy - Reactivated!",
+                "Domains in expired/grace/redemption status but active at CentralNic Reseller - Reactivated!",
                 $this->reactivatedDomains,
                 ["domain", "expirationDate"]
             );
@@ -213,7 +213,7 @@ class Sync
 
         if (!empty($this->cancelledDomains)) {
             $html .= $this->renderTable(
-                "Cancelled domains - Marked for automatic expiration at RRPproxy!",
+                "Cancelled domains - Marked for automatic expiration at CentralNic Reseller!",
                 $this->cancelledDomains,
                 ["domain", "expirationDate"]
             );
@@ -221,7 +221,7 @@ class Sync
 
         if (!empty($this->notRenewingDomains)) {
             $html .= $this->renderTable(
-                "Domains active in WHMCS but marked for expiration or deletion at RRPproxy",
+                "Domains active in WHMCS but marked for expiration or deletion at CentralNic Reseller",
                 $this->notRenewingDomains,
                 ["domain", "renewalMode", "expirationDate"]
             );
@@ -229,7 +229,7 @@ class Sync
 
         if (!empty($this->orphanDomains)) {
             $html .= $this->renderTable(
-                "Domains active in WHMCS but not existing at RRPproxy",
+                "Domains active in WHMCS but not existing at CentralNic Reseller",
                 $this->orphanDomains,
                 ["domain"]
             );
@@ -264,7 +264,7 @@ class Sync
         }
 
         $command = "sendadminemail";
-        $values["customsubject"] = "RRPproxy Daily Cron";
+        $values["customsubject"] = "CentralNic Reseller Daily Cron";
         $values["custommessage"] = $html;
         $values["type"] = "system";
         $values["mergefields"] = [];

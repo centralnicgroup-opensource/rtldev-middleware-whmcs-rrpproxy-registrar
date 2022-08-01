@@ -1,6 +1,6 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Models;
+namespace WHMCS\Module\Registrar\Keysystems\Models;
 
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,7 +59,7 @@ class ZoneModel extends Model
     /**
      * @var string
      */
-    protected static string $tblName = "mod_rrpproxy_zones";
+    protected static $tblName = "mod_rrpproxy_zones";
 
     /**
      * @return bool

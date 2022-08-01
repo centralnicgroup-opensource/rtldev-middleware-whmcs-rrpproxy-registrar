@@ -29,33 +29,33 @@ use WHMCS\Domain\Registrar\Domain;
 use WHMCS\Domain\TopLevel\ImportItem;
 use WHMCS\Domains\DomainLookup\ResultsList;
 use WHMCS\Domains\DomainLookup\SearchResult;
-use WHMCS\Module\Registrar\RRPproxy\Commands\AddDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\CheckDomains;
-use WHMCS\Module\Registrar\RRPproxy\Commands\CheckDomainTransfer;
-use WHMCS\Module\Registrar\RRPproxy\Commands\DeleteDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\GetNameSuggestion;
-use WHMCS\Module\Registrar\RRPproxy\Commands\ModifyDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\PushDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\QueryZoneList;
-use WHMCS\Module\Registrar\RRPproxy\Commands\RenewDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\ResendNotification;
-use WHMCS\Module\Registrar\RRPproxy\Commands\SetAuthCode;
-use WHMCS\Module\Registrar\RRPproxy\Commands\SetDomainRenewalMode;
-use WHMCS\Module\Registrar\RRPproxy\Commands\StatusAccount;
-use WHMCS\Module\Registrar\RRPproxy\Commands\StatusContact;
-use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\StatusDomainTransfer;
-use WHMCS\Module\Registrar\RRPproxy\Commands\TradeDomain;
-use WHMCS\Module\Registrar\RRPproxy\Commands\TransferDomain;
-use WHMCS\Module\Registrar\RRPproxy\Features\Contact;
-use WHMCS\Module\Registrar\RRPproxy\Features\DNSZone;
-use WHMCS\Module\Registrar\RRPproxy\Features\MailFwd;
-use WHMCS\Module\Registrar\RRPproxy\Features\Nameserver;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\Order;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\Pricing;
-use WHMCS\Module\Registrar\RRPproxy\Helpers\ZoneInfo;
-use WHMCS\Module\Registrar\RRPproxy\Migrator;
-use WHMCS\Module\Registrar\RRPproxy\Updater;
+use WHMCS\Module\Registrar\Keysystems\Commands\AddDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\CheckDomains;
+use WHMCS\Module\Registrar\Keysystems\Commands\CheckDomainTransfer;
+use WHMCS\Module\Registrar\Keysystems\Commands\DeleteDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\GetNameSuggestion;
+use WHMCS\Module\Registrar\Keysystems\Commands\ModifyDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\PushDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\QueryZoneList;
+use WHMCS\Module\Registrar\Keysystems\Commands\RenewDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\ResendNotification;
+use WHMCS\Module\Registrar\Keysystems\Commands\SetAuthCode;
+use WHMCS\Module\Registrar\Keysystems\Commands\SetDomainRenewalMode;
+use WHMCS\Module\Registrar\Keysystems\Commands\StatusAccount;
+use WHMCS\Module\Registrar\Keysystems\Commands\StatusContact;
+use WHMCS\Module\Registrar\Keysystems\Commands\StatusDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\StatusDomainTransfer;
+use WHMCS\Module\Registrar\Keysystems\Commands\TradeDomain;
+use WHMCS\Module\Registrar\Keysystems\Commands\TransferDomain;
+use WHMCS\Module\Registrar\Keysystems\Features\Contact;
+use WHMCS\Module\Registrar\Keysystems\Features\DNSZone;
+use WHMCS\Module\Registrar\Keysystems\Features\MailFwd;
+use WHMCS\Module\Registrar\Keysystems\Features\Nameserver;
+use WHMCS\Module\Registrar\Keysystems\Helpers\Order;
+use WHMCS\Module\Registrar\Keysystems\Helpers\Pricing;
+use WHMCS\Module\Registrar\Keysystems\Helpers\ZoneInfo;
+use WHMCS\Module\Registrar\Keysystems\Migrator;
+use WHMCS\Module\Registrar\Keysystems\Updater;
 
 const RRPPROXY_VERSION = "1.7.0";
 
@@ -69,7 +69,7 @@ function keysystems_getConfigArray(array $params): array
 {
     $msgUpdate = '';
     $msgMigrate = '';
-    $msgRegister = "Don't have an RRPproxy Account yet? Get one here: <a target=\"_blank\" href=\"https://www.rrpproxy.net/Register\">www.rrpproxy.net/Register</a>";
+    $msgRegister = "Don't have an CentralNic Reseller account yet? Contact us here: <a target=\"_blank\" href=\"https://www.centralnicreseller.com/\">www.centralnicreseller.com</a>";
 
     static $dbChecked = false;
 
@@ -82,7 +82,7 @@ function keysystems_getConfigArray(array $params): array
             Migrator::migrate($params);
         }
         if (!$params['Username'] && DB::table('tblregistrars')->where('registrar', 'rrpproxy')->exists()) {
-            $msgMigrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-primary' title='Click here to automatically migrate domains and TLD prices related to RRPproxy to this module!'>Migrate from old RRPproxy module</a>";
+            $msgMigrate .= "<br /><a href='configregistrars.php?migrate=true&amp;saved=true#keysystems' class='btn btn-sm btn-primary' title='Click here to automatically migrate domains and TLD prices related to CentralNic Reseller to this module!'>Migrate from legacy module</a>";
         }
         $updateStatus = Updater::check();
         switch ($updateStatus) {
@@ -101,7 +101,7 @@ function keysystems_getConfigArray(array $params): array
     return [
         'FriendlyName' => [
             'Type' => 'System',
-            'Value' => 'RRPproxy v' . RRPPROXY_VERSION
+            'Value' => 'CentralNic Reseller v' . RRPPROXY_VERSION
         ],
         'Description' => [
             'Type' => 'System',
@@ -110,12 +110,12 @@ function keysystems_getConfigArray(array $params): array
         'Username' => [
             'Type' => 'text',
             'Size' => '25',
-            'Description' => 'Enter your RRPproxy Username',
+            'Description' => 'Enter your CentralNic Reseller Username',
         ],
         'Password' => [
             'Type' => 'password',
             'Size' => '25',
-            'Description' => 'Enter your RRPproxy Password',
+            'Description' => 'Enter your CentralNic Reseller Password',
         ],
         'DefaultTTL' => [
             'FriendlyName' => 'Default TTL',
@@ -185,7 +185,7 @@ function keysystems_getConfigArray(array $params): array
         'TestPassword' => [
             'Type' => 'password',
             'Size' => '25',
-            'Description' => 'Enter your RRPproxy OT&amp;E Password',
+            'Description' => 'Enter your CentralNic Reseller OT&amp;E Password',
         ],
         "ProxyServer" => [
             "FriendlyName" => "Proxy Server",
@@ -973,7 +973,7 @@ function keysystems_TransferSync(array $params): array
                 $modifyDomain->setOwnerContact($owner_id);
             } catch (Exception $ex) {
                 //TODO use module logging instead
-                localAPI('LogActivity', ['description' => "[keysystems] getOrCreateOwnerContact on TransferSync failed: {$ex->getMessage()}"]);
+                localAPI('LogActivity', ['description' => "[CentralNicReseller] getOrCreateOwnerContact on TransferSync failed: {$ex->getMessage()}"]);
             }
         }
     }
@@ -1010,7 +1010,7 @@ function keysystems_TransferSync(array $params): array
             $modifyDomain->setTechContact($contact_id);
         } catch (Exception $ex) {
             //TODO use module logging instead
-            localAPI('LogActivity', ['description' => "[keysystems] getOrCreateContact on TransferSync failed: {$ex->getMessage()}"]);
+            localAPI('LogActivity', ['description' => "[CentralNicReseller] getOrCreateContact on TransferSync failed: {$ex->getMessage()}"]);
         }
     }
 
@@ -1019,7 +1019,7 @@ function keysystems_TransferSync(array $params): array
         $modifyDomain->execute();
     } catch (Exception $ex) {
         //TODO use module logging instead
-        localAPI('LogActivity', ['description' => "[keysystems] ModifyDomain on TransferSync failed: {$ex->getMessage()}"]);
+        localAPI('LogActivity', ['description' => "[CentralNicReseller] ModifyDomain on TransferSync failed: {$ex->getMessage()}"]);
     }
 
     return $values;
@@ -1159,13 +1159,13 @@ function keysystems_GetTldPricing(array $params)
             $values = [
                 "active" => $zoneList->api->properties["ACTIVE"][$id],
                 "yearly" => $zoneList->api->properties["PERIODTYPE"][$id] == "YEAR",
-//                "count" => $zoneList->api->properties["DOMAINCOUNT"][$id] ?:  0,
+                //                "count" => $zoneList->api->properties["DOMAINCOUNT"][$id] ?:  0,
                 "currency" => $zoneList->api->properties["CURRENCY"][$id],
                 "annual_fee" => (float) $zoneList->api->properties["ANNUAL"][$id],
-//                "application_fee" => (float) $zoneList->api->properties["APPLICATION"][$id],
+                //                "application_fee" => (float) $zoneList->api->properties["APPLICATION"][$id],
                 "restore_fee" => (float) $zoneList->api->properties["RESTORE"][$id],
                 "setup_fee" => (float) $zoneList->api->properties["SETUP"][$id],
-//                "trade_fee" => (float) $zoneList->api->properties["TRADE"][$id],
+                //                "trade_fee" => (float) $zoneList->api->properties["TRADE"][$id],
                 "transfer_fee" => (float) $zoneList->api->properties["TRANSFER"][$id]
             ];
 

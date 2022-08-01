@@ -1,6 +1,6 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy;
+namespace WHMCS\Module\Registrar\Keysystems;
 
 use CNIC\ClientFactory;
 use CNIC\HEXONET\SessionClient;
@@ -9,39 +9,39 @@ use Exception;
 
 class APIClient
 {
-    public string $command;
+    public $command;
     /**
      * @var array<string, mixed>
      */
-    public array $params;
+    public $params;
     /**
      * @var SessionClient
      */
-    public SessionClient $client;
+    public $client;
     /**
      * @var array<string, mixed>
      */
-    public array $response = [];
+    public $response = [];
     /**
      * @var array<int, array<string, mixed>>
      */
-    public array $responseList = [];
+    public $responseList = [];
     /**
      * @var array<string, mixed>
      */
-    public array $properties;
+    public $properties;
     /**
      * @var array<int, array<string, mixed>>
      */
-    public array $propertiesList;
+    public $propertiesList;
     /**
      * @var Domain
      */
-    public Domain $domain;
+    public $domain;
     /**
      * @var array<string, mixed>
      */
-    public array $args = [];
+    public $args = [];
 
     /**
      * @param array<string, mixed> $params

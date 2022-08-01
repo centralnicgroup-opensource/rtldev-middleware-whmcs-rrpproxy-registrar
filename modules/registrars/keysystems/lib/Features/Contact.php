@@ -1,11 +1,11 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Features;
+namespace WHMCS\Module\Registrar\Keysystems\Features;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Commands\AddContact;
-use WHMCS\Module\Registrar\RRPproxy\Commands\ModifyContact;
-use WHMCS\Module\Registrar\RRPproxy\Commands\StatusContact;
+use WHMCS\Module\Registrar\Keysystems\Commands\AddContact;
+use WHMCS\Module\Registrar\Keysystems\Commands\ModifyContact;
+use WHMCS\Module\Registrar\Keysystems\Commands\StatusContact;
 
 class Contact
 {

@@ -1,28 +1,28 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Features;
+namespace WHMCS\Module\Registrar\Keysystems\Features;
 
 use Exception;
-use WHMCS\Module\Registrar\RRPproxy\Commands\CommandBase;
+use WHMCS\Module\Registrar\Keysystems\Commands\CommandBase;
 
 class MailFwd extends CommandBase
 {
     /**
      * @var array<array<string, mixed>>
      */
-    public array $values = [];
+    public $values = [];
     /**
      * @var array<string>
      */
-    private array $orig = [];
+    private $orig = [];
     /**
      * @var array<string>
      */
-    private array $add = [];
+    private $add = [];
     /**
      * @var array<string>
      */
-    private array $del = [];
+    private $del = [];
 
     /**
      * @param array<string, mixed> $params

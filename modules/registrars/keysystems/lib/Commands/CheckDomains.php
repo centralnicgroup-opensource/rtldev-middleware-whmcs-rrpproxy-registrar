@@ -1,6 +1,6 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use WHMCS\Domains\DomainLookup\SearchResult;
 
@@ -9,7 +9,7 @@ class CheckDomains extends CommandBase
     /**
      * @var array<SearchResult>
      */
-    private array $searchResults = [];
+    private $searchResults = [];
 
     /**
      * @param array<string, mixed> $params

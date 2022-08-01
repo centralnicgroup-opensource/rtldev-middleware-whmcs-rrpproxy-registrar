@@ -1,17 +1,17 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Helpers;
+namespace WHMCS\Module\Registrar\Keysystems\Helpers;
 
 use Exception;
 use Illuminate\Database\Capsule\Manager as DB;
-use WHMCS\Module\Registrar\RRPproxy\Commands\QueryExchangeRates;
+use WHMCS\Module\Registrar\Keysystems\Commands\QueryExchangeRates;
 
 class Pricing
 {
     /**
      * @var array<string, float>
      */
-    private static array $exchangeRates = [];
+    private static $exchangeRates = [];
 
     /**
      * @param array<string, mixed> $params

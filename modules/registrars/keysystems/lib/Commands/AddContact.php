@@ -1,12 +1,12 @@
 <?php
 
-namespace WHMCS\Module\Registrar\RRPproxy\Commands;
+namespace WHMCS\Module\Registrar\Keysystems\Commands;
 
 use Exception;
 
 class AddContact extends CommandBase
 {
-    private string $handle;
+    private $handle;
 
     /**
      * @param array<string, mixed> $params

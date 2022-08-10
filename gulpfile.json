@@ -4,7 +4,7 @@
     "phpcsfixcmd": "phpcbf --standard=PSR12",
     "phpcschkcmd": "phpcs -n --colors --standard=PSR12",
     "phpstancmd": "phpstan analyze -c phpstan.neon --memory-limit 2G",
-    "archiveFileName": "whmcs-rrpproxy-registrar",
+    "archiveFileName": "whmcs-cnic-registrar",
     "archiveBuildPath": "build",
     "filesForArchive": [
         "README.md",
@@ -15,7 +15,6 @@
     ],
     "filesForCleanup": [
         "templates_c",
-        "composer.lock",
         ".phpunit.result.cache",
         "tmp"
     ]

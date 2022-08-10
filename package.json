@@ -46,7 +46,7 @@
     "glob-parent": "^6.0.2"
   },
   "devDependencies": {
-    "@hexonet/semantic-release-github-whmcs-config": "^3.0.1",
+    "@hexonet/semantic-release-github-whmcs-config": "^3.0.2",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
     "gulp-zip": "^5.0.2",

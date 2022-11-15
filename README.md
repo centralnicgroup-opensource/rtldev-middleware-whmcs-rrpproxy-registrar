@@ -5,7 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/rrpproxy/whmcs-rrpproxy-registrar/blob/master/CONTRIBUTING.md)
 
-This Repository covers the updated WHMCS Registrar Module of RRPproxy. Source code and latest package version are stable. Just the documentation is to be seen as WIP.
+This Repository covers the updated WHMCS Registrar Module of RRPproxy.
+
+> NOTE: This repository has been deprecated in favor of the [CentralNic Software Bundle for WHMCS](https://github.com/centralnicgroup-opensource/rtldev-middleware-whmcs). Please follow our [Installation / Upgrade Guide](https://centralnic-reseller.github.io/centralnic-reseller/docs/cnr/whmcs/whmcs-cnic-registrar#installation--upgrade). Compatibility: WHMCS 7.8++, PHP 7.2++.
 
 ## Resources ##
 
